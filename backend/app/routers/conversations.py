@@ -347,13 +347,19 @@ async def send_message(
 
     # Broadcast to all members in the conversation via WebSocket
     msg_data = MessageResponse.model_validate(msg).model_dump(mode="json")
+    if payload.client_temp_id:
+        msg_data["client_temp_id"] = payload.client_temp_id
+
     await manager.broadcast_to_conversation(
         conv_id,
         {"type": "message:new", "message": msg_data},
         db,
     )
 
-    return msg
+    # Return the message with the client_temp_id included for the sender
+    response_model = MessageResponse.model_validate(msg)
+    response_model.client_temp_id = payload.client_temp_id
+    return response_model
 
 
 # ---------------------------------------------------------------------------

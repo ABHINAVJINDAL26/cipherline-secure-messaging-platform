@@ -112,6 +112,7 @@ class MessageResponse(BaseModel):
     attachment_url: Optional[str] = None
     reply_to_message_id: Optional[str] = None
     reply_to: Optional["MessageResponse"] = None
+    client_temp_id: Optional[str] = None
     is_deleted: bool
     expires_at: Optional[datetime] = None
     created_at: datetime
@@ -125,6 +126,7 @@ class MessageResponse(BaseModel):
 class SendMessageRequest(BaseModel):
     content: Optional[str] = None
     reply_to_message_id: Optional[str] = None
+    client_temp_id: Optional[str] = None
 
 
 class AddReactionRequest(BaseModel):

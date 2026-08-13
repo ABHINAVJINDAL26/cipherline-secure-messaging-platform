@@ -6,7 +6,7 @@ from app.models.models import User
 from app.schemas.schemas import (
     RegisterRequest, LoginRequest, TokenResponse, UserResponse, GoogleLoginRequest, VerifyOTPRequest
 )
-from app.core.security import hash_password, verify_password, create_access_token
+from app.core.security import hash_password, verify_password, create_access_token, MOCK_OTP
 from google.oauth2 import id_token
 from google.auth.transport import requests
 import uuid
@@ -27,10 +27,10 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     # Check duplicate in database
     existing = db.query(User).filter(User.phone_number == payload.phone_number).first()
     if existing:
-        raise HTTPException(400, "Phone number is already registered")
+        raise HTTPException(400, "User already exists, please login")
 
-    # Generate a random 6-digit OTP
-    otp = str(random.randint(100000, 999999))
+    # Use fixed demo OTP for seeded/demo deployments
+    otp = MOCK_OTP
     print(f"\n========================================")
     print(f"[OTP] Generated OTP for {payload.phone_number}: {otp}")
     print(f"========================================\n")
@@ -58,7 +58,7 @@ def verify_otp(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
         raise HTTPException(400, "No pending registration found for this phone number")
 
     if pending["otp"] != payload.otp:
-        raise HTTPException(400, "Invalid verification code")
+        raise HTTPException(400, "Invalid OTP, try again")
 
     # Double check race condition
     existing = db.query(User).filter(User.phone_number == payload.phone_number).first()
