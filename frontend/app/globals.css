@@ -159,7 +159,7 @@
      Message Bubbles
      ============================================================ */
   .bubble-sent {
-    @apply rounded-[18px] px-4 py-2 max-w-[70%] relative;
+    @apply rounded-[18px] px-4 py-2 max-w-[75%] min-w-[68px] w-fit relative;
     background-color: var(--bg-message-sent);
     color: var(--text-message-sent);
     border-bottom-right-radius: 4px; /* Signal's signature tail-less style */
@@ -167,7 +167,7 @@
   }
 
   .bubble-received {
-    @apply rounded-[18px] px-4 py-2 max-w-[70%] relative;
+    @apply rounded-[18px] px-4 py-2 max-w-[75%] min-w-[68px] w-fit relative;
     background-color: var(--bg-message-received);
     color: var(--text-message-received);
     border-bottom-left-radius: 4px;

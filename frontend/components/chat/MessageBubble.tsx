@@ -112,7 +112,7 @@ export default function MessageBubble({
 
           {/* Main bubble */}
           <div className={isMine ? 'bubble-sent' : 'bubble-received'} style={{ position: 'relative' }}>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{message.content}</p>
 
             {/* Time + tick */}
             <div className={`flex items-center gap-1 mt-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
