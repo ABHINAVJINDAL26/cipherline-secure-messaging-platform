@@ -1,59 +1,118 @@
 'use client';
 
+import { useUIStore } from '@/store/uiStore';
+import { MessageSquare, Users, Search, Shield, Lock, Sparkles } from 'lucide-react';
+
 export default function EmptyChatState() {
+  const { setNewChatOpen, setNewGroupOpen, setCommandPaletteOpen } = useUIStore();
+
   return (
-    <div className="empty-state">
-      {/* Premium Chat Illustration */}
-      <div className="flex items-center justify-center w-48 h-48 mb-2 relative" style={{ animation: 'scaleIn 0.3s ease-out' }}>
-        <svg width="180" height="180" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Background circle decoration */}
-          <circle cx="100" cy="100" r="80" fill="var(--accent-light)" opacity="0.4" />
-          <circle cx="100" cy="100" r="60" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.3" />
-          
-          {/* Decorative floating dots */}
-          <circle cx="45" cy="65" r="5" fill="var(--accent)" opacity="0.6" />
-          <circle cx="160" cy="85" r="3" fill="var(--accent)" opacity="0.4" />
-          <circle cx="140" cy="145" r="6" fill="var(--accent)" opacity="0.5" />
-          
-          {/* Speech bubble 2 (background received message) */}
-          <g filter="drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.05))">
-            <path d="M50 115C50 101.193 61.1929 90 75 90H125C138.807 90 150 101.193 150 115C150 128.807 138.807 140 125 140H70L50 150V115Z" fill="var(--bg-input)" stroke="var(--border)" strokeWidth="1.5" />
-            {/* Typing status dots in bubble 2 */}
-            <circle cx="80" cy="115" r="3" fill="var(--text-muted)" opacity="0.6" />
-            <circle cx="95" cy="115" r="3" fill="var(--text-muted)" opacity="0.6" />
-            <circle cx="110" cy="115" r="3" fill="var(--text-muted)" opacity="0.6" />
+    <div className="flex flex-col items-center justify-center h-full px-6 py-12 text-center select-none overflow-y-auto">
+      {/* 3D Animated Illustration Container */}
+      <div className="relative flex items-center justify-center w-56 h-56 mb-6">
+        {/* Glowing background aura rings */}
+        <div className="absolute w-48 h-48 rounded-full bg-blue-500/10 animate-pulse-ring" />
+        <div className="absolute w-60 h-60 rounded-full bg-indigo-500/5 animate-pulse-ring" style={{ animationDelay: '1.2s' }} />
+
+        {/* 3D Privacy Shield & Chat Bubbles Vector SVG */}
+        <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Radial gradient background glow */}
+          <circle cx="100" cy="100" r="75" fill="url(#emptyGlow)" opacity="0.2" />
+
+          {/* Security Shield Outline */}
+          <path
+            d="M100 35 L150 52 V102 C150 135 125 160 100 172 C75 160 50 135 50 102 V52 L100 35 Z"
+            stroke="url(#shieldGrad)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.8"
+            strokeDasharray="4 4"
+          />
+
+          {/* Floating Left Chat Bubble */}
+          <g filter="drop-shadow(0px 8px 16px rgba(0, 0, 0, 0.25))">
+            <path
+              d="M50 110C50 98.9543 58.9543 90 70 90H115C126.046 90 135 98.9543 135 110C135 121.046 126.046 130 115 130H65L50 138V110Z"
+              fill="#1E293B"
+              stroke="#334155"
+              strokeWidth="1.5"
+            />
+            <line x1="70" y1="106" x2="115" y2="106" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="70" y1="114" x2="98" y2="114" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round" />
           </g>
 
-          {/* Speech bubble 1 (foreground sent message) */}
-          <g filter="drop-shadow(0px 8px 16px rgba(44, 107, 237, 0.15))">
-            <path d="M150 85C150 98.8071 138.807 110 125 110H75C61.1929 110 50 98.8071 50 85C50 71.1929 61.1929 60 75 60H130L150 50V85Z" fill="var(--accent)" />
-            {/* Lines inside bubble 1 representing text */}
-            <line x1="75" y1="80" x2="125" y2="80" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
-            <line x1="75" y1="90" x2="110" y2="90" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
+          {/* Floating Right Chat Bubble */}
+          <g filter="drop-shadow(0px 12px 24px rgba(44, 107, 237, 0.3))">
+            <path
+              d="M150 78C150 89.0457 141.046 98 130 98H88C76.9543 98 68 89.0457 68 78C68 66.9543 76.9543 58 88 58H140L150 50V78Z"
+              fill="#2C6BED"
+            />
+            <line x1="88" y1="74" x2="132" y2="74" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity="0.95" />
+            <line x1="88" y1="82" x2="115" y2="82" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity="0.95" />
           </g>
+
+          {/* Center Lock Badge */}
+          <rect x="88" y="124" width="24" height="24" rx="6" fill="#10B981" />
+          <path d="M96 134 V132 C96 129.8 97.8 128 100 128 C102.2 128 104 129.8 104 132 V134" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+          <rect x="94" y="134" width="12" height="9" rx="2" fill="white" />
+
+          <defs>
+            <radialGradient id="emptyGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" transform="translate(100 100) rotate(90) scale(75)">
+              <stop offset="0%" stopColor="#3B82F6" />
+              <stop offset="100%" stopColor="#6366F1" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="shieldGrad" x1="50" y1="35" x2="150" y2="172" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#3B82F6" />
+              <stop offset="100%" stopColor="#8B5CF6" />
+            </linearGradient>
+          </defs>
         </svg>
       </div>
 
-      <div>
-        <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-          Signal Clone
-        </h2>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)', maxWidth: '300px' }}>
-          Select a conversation to start messaging, or create a new chat. Messages are end-to-end encrypted.
-        </p>
+      {/* Heading */}
+      <h2 className="text-2xl font-bold tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>
+        Cipherline Messaging
+      </h2>
+      <p className="text-sm max-w-sm mb-8 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        Send end-to-end encrypted messages to anyone by username. Fast, private, and secure.
+      </p>
+
+      {/* Quick Action Cards */}
+      <div className="flex flex-wrap items-center justify-center gap-3 max-w-md mb-8">
+        <button
+          onClick={() => setNewChatOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95 shadow-sm"
+          style={{ background: 'var(--accent)', color: '#fff' }}
+        >
+          <MessageSquare size={16} />
+          <span>New Chat</span>
+        </button>
+
+        <button
+          onClick={() => setNewGroupOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95"
+          style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+        >
+          <Users size={16} style={{ color: 'var(--text-muted)' }} />
+          <span>Create Group</span>
+        </button>
+
+        <button
+          onClick={() => setCommandPaletteOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 active:scale-95"
+          style={{ background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+        >
+          <Search size={16} style={{ color: 'var(--text-muted)' }} />
+          <span>Search (Cmd+K)</span>
+        </button>
       </div>
 
-      <div className="flex flex-col gap-2 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-        <p>💡 <strong>Tip:</strong> Press <kbd className="px-1.5 py-0.5 rounded text-xs font-mono" style={{ background: 'var(--bg-input)', border: '1px solid var(--border)' }}>Cmd+K</kbd> to quickly search</p>
-        <p>↵ Send · ⇧↵ New line</p>
-      </div>
-
-      <div className="flex items-center gap-2 text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-        <span>End-to-end encrypted (mocked)</span>
+      {/* Security Footer Badge */}
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs" style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
+        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <Shield size={13} className="text-emerald-500" />
+        <span>End-to-End Encrypted</span>
       </div>
     </div>
   );
