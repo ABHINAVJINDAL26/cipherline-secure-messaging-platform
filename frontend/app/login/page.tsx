@@ -7,6 +7,7 @@ import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { wsClient } from '@/lib/websocket';
 import { TokenResponse } from '@/types';
+import { getErrorMessage } from '@/lib/utils';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function LoginPage() {
       wsClient.connect(data.user.id, data.access_token);
       router.replace('/chats');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Google sign-in failed');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -69,7 +70,7 @@ export default function LoginPage() {
       wsClient.connect(data.user.id, data.access_token);
       router.replace('/chats');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid credentials. Please try again.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -98,7 +99,7 @@ export default function LoginPage() {
             <input
               className="signal-input"
               type="text"
-              placeholder="+1-555-0001"
+              placeholder="e.g. +91 98765 43210"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               required

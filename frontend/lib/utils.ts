@@ -95,3 +95,20 @@ export function getInitials(name: string): string {
     .map((n) => n[0]?.toUpperCase() || '')
     .join('');
 }
+
+/**
+ * Safely extract error message string from Axios error, handling string details
+ * and list of Pydantic validation error objects.
+ */
+export function getErrorMessage(err: any): string {
+  const detail = err.response?.data?.detail;
+  if (!detail) return err.message || 'An error occurred';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((d: any) => {
+      const field = d.loc ? d.loc.filter((l: any) => l !== 'body').join('.') : 'field';
+      return `${field}: ${d.msg}`;
+    }).join(', ');
+  }
+  return typeof detail === 'object' ? JSON.stringify(detail) : String(detail);
+}

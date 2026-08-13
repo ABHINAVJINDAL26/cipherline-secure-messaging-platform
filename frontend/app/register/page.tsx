@@ -7,6 +7,7 @@ import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { wsClient } from '@/lib/websocket';
 import { TokenResponse } from '@/types';
+import { getErrorMessage } from '@/lib/utils';
 
 type Step = 'details' | 'otp';
 
@@ -14,13 +15,13 @@ export default function RegisterPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const [step, setStep] = useState<Step>('details');
-  
+
   // Form Details
   const [phoneNumber, setPhoneNumber] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   // OTP Verification
   const [otp, setOtp] = useState('');
   const [devOtpHint, setDevOtpHint] = useState(''); // helper to show the generated OTP code in dev
@@ -39,7 +40,7 @@ export default function RegisterPage() {
       wsClient.connect(data.user.id, data.access_token);
       router.replace('/chats');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Google sign-in failed');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -86,7 +87,7 @@ export default function RegisterPage() {
       }
       setStep('otp');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -109,7 +110,7 @@ export default function RegisterPage() {
       wsClient.connect(data.user.id, data.access_token);
       router.replace('/chats');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid verification code');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -136,25 +137,25 @@ export default function RegisterPage() {
             <form onSubmit={handleRegisterDetails} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Display Name</label>
-                <input className="signal-input" type="text" placeholder="e.g. Abhinav"
+                <input className="signal-input" type="text" placeholder="Enter display name"
                   value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Phone Number</label>
-                <input className="signal-input" type="text" placeholder="e.g. +919876543210"
+                <input className="signal-input" type="text" placeholder="e.g. +91 98765 43210"
                   value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Password</label>
-                <input className="signal-input" type="password" placeholder="Create a password"
+                <input className="signal-input" type="password" placeholder="Enter password"
                   value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Confirm Password</label>
-                <input className="signal-input" type="password" placeholder="Confirm your password"
+                <input className="signal-input" type="password" placeholder="Confirm password"
                   value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
               </div>
 
