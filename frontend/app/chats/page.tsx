@@ -29,12 +29,16 @@ export default function ChatsPage() {
   } = useChatStore();
   const { isNewChatOpen, isNewGroupOpen, isSettingsOpen, commandPaletteOpen, addToast } = useUIStore();
 
-  // Guard: redirect if not authenticated
+  // Guard: redirect if not authenticated.
+  // Small delay lets Zustand persist middleware rehydrate from localStorage before we check.
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/login');
-    }
-  }, [isAuthenticated, router]);
+    const timer = setTimeout(() => {
+      if (!useAuthStore.getState().isAuthenticated) {
+        router.replace('/login');
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   // Load conversations on mount
   useEffect(() => {

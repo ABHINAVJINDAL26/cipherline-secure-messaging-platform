@@ -25,6 +25,7 @@ export default function SettingsPanel({ user }: SettingsPanelProps) {
   const { setSettingsOpen, theme, setTheme, addToast } = useUIStore();
   const { updateUser, logout } = useAuthStore();
   const [editName, setEditName] = useState(user.display_name);
+  const [editUsername, setEditUsername] = useState(user.username || '');
   const [editAbout, setEditAbout] = useState(user.about_status || '');
   const [editAvatarUrl, setEditAvatarUrl] = useState(user.avatar_url || '');
   const [saving, setSaving] = useState(false);
@@ -34,17 +35,23 @@ export default function SettingsPanel({ user }: SettingsPanelProps) {
       addToast({ message: 'Display name cannot be empty', type: 'error' });
       return;
     }
+    if (editUsername.trim() && !/^[a-z0-9._]{3,20}$/.test(editUsername.trim())) {
+      addToast({ message: 'Username: 3-20 chars, lowercase letters/numbers/._', type: 'error' });
+      return;
+    }
     setSaving(true);
     try {
       const res = await usersApi.updateMe({
         display_name: editName.trim(),
         about_status: editAbout.trim(),
-        avatar_url: editAvatarUrl
+        avatar_url: editAvatarUrl,
+        username: editUsername.trim().toLowerCase() || undefined,
       });
       updateUser(res.data);
       addToast({ message: 'Profile updated!', type: 'success' });
-    } catch {
-      addToast({ message: 'Failed to update profile', type: 'error' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || 'Failed to update profile';
+      addToast({ message: msg, type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -97,8 +104,12 @@ export default function SettingsPanel({ user }: SettingsPanelProps) {
           <div className="flex-1">
             <input className="signal-input text-sm mb-1.5" value={editName}
               onChange={(e) => setEditName(e.target.value)} placeholder="Display name" />
-            <input className="signal-input text-xs" value={editAbout}
-              onChange={(e) => setEditAbout(e.target.value)} placeholder="About..." />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>@</span>
+              <input className="signal-input text-xs" style={{ paddingLeft: '1.5rem' }} value={editUsername}
+                onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
+                placeholder="username" />
+            </div>
           </div>
         </div>
 

@@ -54,6 +54,7 @@ class UserUpdateRequest(BaseModel):
     display_name: Optional[str] = None
     avatar_url: Optional[str] = None
     about_status: Optional[str] = None
+    username: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

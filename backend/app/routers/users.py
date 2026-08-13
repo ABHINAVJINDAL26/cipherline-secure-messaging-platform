@@ -26,6 +26,13 @@ def update_me(
         current_user.avatar_url = payload.avatar_url
     if payload.about_status is not None:
         current_user.about_status = payload.about_status
+    if payload.username is not None:
+        new_username = payload.username.lower().strip()
+        if new_username != current_user.username:
+            existing = db.query(User).filter(User.username == new_username).first()
+            if existing:
+                raise HTTPException(400, "Username already taken")
+            current_user.username = new_username
     db.commit()
     db.refresh(current_user)
     return current_user

@@ -58,7 +58,7 @@ export const authApi = {
 // ---------------------------------------------------------------------------
 export const usersApi = {
   getMe: () => api.get('/users/me'),
-  updateMe: (data: { display_name?: string; avatar_url?: string; about_status?: string }) =>
+  updateMe: (data: { display_name?: string; avatar_url?: string; about_status?: string; username?: string }) =>
     api.patch('/users/me', data),
   searchUsers: (q: string) => api.get('/users/', { params: { q } }),
   getUser: (userId: string) => api.get(`/users/${userId}`),
