@@ -134,20 +134,21 @@ export const useChatStore = create<ChatState>((set) => ({
       const msgs = state.messages[conversationId] || [];
       const updated = msgs.map((msg) => {
         if (msg.id !== messageId) return msg;
+        const currentReactions = msg.reactions || [];
         if (action === 'added') {
-          const alreadyHas = msg.reactions.some((r) => r.user_id === userId && r.emoji === emoji);
+          const alreadyHas = currentReactions.some((r) => r.user_id === userId && r.emoji === emoji);
           if (alreadyHas) return msg;
           return {
             ...msg,
             reactions: [
-              ...msg.reactions,
+              ...currentReactions,
               { id: `${userId}-${emoji}`, user_id: userId, emoji, user: reactionUser },
             ],
           };
         } else {
           return {
             ...msg,
-            reactions: msg.reactions.filter((r) => !(r.user_id === userId && r.emoji === emoji)),
+            reactions: currentReactions.filter((r) => !(r.user_id === userId && r.emoji === emoji)),
           };
         }
       });

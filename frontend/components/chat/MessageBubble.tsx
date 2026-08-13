@@ -124,11 +124,13 @@ export default function MessageBubble({
           </div>
 
           {/* Reactions */}
-          {message.reactions.length > 0 && (
+          {((message.reactions || []).length > 0) && (
             <div className={`flex flex-wrap gap-1 mt-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
               {Object.entries(
-                message.reactions.reduce((acc, r) => {
-                  acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                (message.reactions || []).reduce((acc, r) => {
+                  if (r && r.emoji) {
+                    acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+                  }
                   return acc;
                 }, {} as Record<string, number>)
               ).map(([emoji, count]) => (
