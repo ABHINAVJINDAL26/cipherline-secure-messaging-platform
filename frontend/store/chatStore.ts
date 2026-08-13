@@ -51,11 +51,20 @@ export const useChatStore = create<ChatState>((set) => ({
       conversations: state.conversations.map((c) => (c.id === conv.id ? conv : c)),
     })),
 
-  setActiveConversation: (id) => set({ activeConversationId: id }),
+  setActiveConversation: (id) =>
+    set((state) => ({
+      activeConversationId: id,
+      conversations: id
+        ? state.conversations.map((c) => (c.id === id ? { ...c, unread_count: 0 } : c))
+        : state.conversations,
+    })),
 
   setMessages: (conversationId, messages) =>
     set((state) => ({
       messages: { ...state.messages, [conversationId]: messages },
+      conversations: state.conversations.map((c) =>
+        c.id === conversationId ? { ...c, unread_count: 0 } : c
+      ),
     })),
 
   addMessage: (conversationId, message) =>
@@ -170,9 +179,15 @@ export const useChatStore = create<ChatState>((set) => ({
 
   updateLastMessage: (conversationId, message) =>
     set((state) => ({
-      conversations: state.conversations.map((c) =>
-        c.id === conversationId ? { ...c, last_message: message } : c
-      ).sort((a, b) => {
+      conversations: state.conversations.map((c) => {
+        if (c.id !== conversationId) return c;
+        const isActive = state.activeConversationId === conversationId;
+        return {
+          ...c,
+          last_message: message,
+          unread_count: isActive ? 0 : (c.unread_count || 0) + 1,
+        };
+      }).sort((a, b) => {
         const aTime = a.last_message?.created_at || a.created_at;
         const bTime = b.last_message?.created_at || b.created_at;
         return parseDate(bTime).getTime() - parseDate(aTime).getTime();
