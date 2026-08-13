@@ -164,7 +164,6 @@ export default function MessageBubble({
               )}
             </div>
           </div>
-        )}
       </div>
     </div>
   );
