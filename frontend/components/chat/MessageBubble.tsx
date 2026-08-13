@@ -43,14 +43,18 @@ export default function MessageBubble({
   const { updateMessageReaction } = useChatStore();
 
   const handleReaction = async (emoji: string) => {
-    try {
-      const res = await conversationsApi.addReaction(conversationId, message.id, emoji);
-      const action = res.data.action as 'added' | 'removed';
-      // Optimistic update (find current user from message data)
-      const currentUser = message.sender; // fallback
-      updateMessageReaction(conversationId, message.id, currentUserId, emoji, action, currentUser);
-    } catch {}
     setShowEmojiPicker(false);
+    const safeReactions = message.reactions || [];
+    const hasReacted = safeReactions.some((r) => r.user_id === currentUserId && r.emoji === emoji);
+    const action = hasReacted ? 'removed' : 'added';
+
+    // Instant optimistic update
+    updateMessageReaction(conversationId, message.id, currentUserId, emoji, action, message.sender);
+
+    // Persist to backend if API exists (silent catch)
+    try {
+      await conversationsApi.addReaction(conversationId, message.id, emoji);
+    } catch {}
   };
 
   const myStatus = getMyStatus(message, currentUserId);

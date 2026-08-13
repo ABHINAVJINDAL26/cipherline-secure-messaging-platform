@@ -26,7 +26,9 @@ export default function Composer({ conversationId, currentUser, replyToMessageId
     '❤️', '💖', '🔥', '✨', '💯', '🚀', '🎉', '💡', '🌟', '🤝'
   ];
 
-  const handleInsertEmoji = (emoji: string) => {
+  const handleInsertEmoji = (emoji: string, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setText((prev) => prev + emoji);
     setShowEmojiPicker(false);
     textareaRef.current?.focus();
@@ -141,8 +143,13 @@ export default function Composer({ conversationId, currentUser, replyToMessageId
         {/* Emoji button & Picker */}
         <div className="relative">
           <button
+            type="button"
             className="icon-btn flex-shrink-0 mb-1"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowEmojiPicker(!showEmojiPicker);
+            }}
             aria-label="Emoji"
             title="Choose emoji"
           >
@@ -158,7 +165,8 @@ export default function Composer({ conversationId, currentUser, replyToMessageId
               {EMOJI_LIST.map((emoji) => (
                 <button
                   key={emoji}
-                  onClick={() => handleInsertEmoji(emoji)}
+                  type="button"
+                  onClick={(e) => handleInsertEmoji(emoji, e)}
                   className="text-lg hover:scale-125 transition-transform w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--bg-hover)]"
                 >
                   {emoji}
