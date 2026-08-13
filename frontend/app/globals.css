@@ -1,0 +1,464 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Signal Clone — Global Design System
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* Signal Light Mode */
+    --bg-app: #FFFFFF;
+    --bg-sidebar: #F7F7F8;
+    --bg-chat: #FFFFFF;
+    --bg-message-sent: #2C6BED;
+    --bg-message-received: #F1F1F1;
+    --bg-hover: #F0F0F1;
+    --bg-active: #E8EDF7;
+    --bg-input: #F7F7F8;
+
+    --text-primary: #111318;
+    --text-secondary: #4B5563;
+    --text-muted: #6B7280;
+    --text-message-sent: #FFFFFF;
+    --text-message-received: #111318;
+
+    --border: #E4E4E5;
+    --divider: #EFEFEF;
+
+    --accent: #2C6BED;
+    --accent-hover: #1D5BD4;
+    --accent-light: #EBF0FD;
+
+    --online: #2ECC71;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+
+    --unread-badge: #2C6BED;
+
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.14);
+
+    --radius-bubble: 18px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+  }
+
+  .dark {
+    /* Signal Dark Mode */
+    --bg-app: #0F1113;
+    --bg-sidebar: #17191C;
+    --bg-chat: #121417;
+    --bg-message-sent: #1B4DBB;
+    --bg-message-received: #26282C;
+    --bg-hover: #1E2025;
+    --bg-active: #1A2235;
+    --bg-input: #1E2025;
+
+    --text-primary: #F2F2F3;
+    --text-secondary: #B0B7C3;
+    --text-muted: #8A8F98;
+    --text-message-sent: #FFFFFF;
+    --text-message-received: #F2F2F3;
+
+    --border: #2A2C30;
+    --divider: #252729;
+
+    --accent: #3A76F0;
+    --accent-hover: #2C6BED;
+    --accent-light: #1A2540;
+
+    --online: #2ECC71;
+    --danger: #F87171;
+    --warning: #FCD34D;
+
+    --unread-badge: #3A76F0;
+
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* Custom scrollbar — Signal-style thin scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  /* Selection color */
+  ::selection {
+    background: var(--accent-light);
+    color: var(--text-primary);
+  }
+}
+
+@layer components {
+  /* ============================================================
+     Layout
+     ============================================================ */
+  .app-shell {
+    @apply flex h-screen w-screen overflow-hidden;
+    background-color: var(--bg-app);
+  }
+
+  .left-rail {
+    @apply flex flex-col items-center gap-1 py-4 flex-shrink-0;
+    width: 56px;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+  }
+
+  .chat-list-pane {
+    @apply flex flex-col flex-shrink-0 overflow-hidden;
+    width: 320px;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+  }
+
+  .chat-pane {
+    @apply flex flex-col flex-1 overflow-hidden;
+    background-color: var(--bg-chat);
+  }
+
+  /* ============================================================
+     Message Bubbles
+     ============================================================ */
+  .bubble-sent {
+    @apply rounded-[18px] px-4 py-2 max-w-[70%] relative;
+    background-color: var(--bg-message-sent);
+    color: var(--text-message-sent);
+    border-bottom-right-radius: 4px; /* Signal's signature tail-less style */
+    align-self: flex-end;
+  }
+
+  .bubble-received {
+    @apply rounded-[18px] px-4 py-2 max-w-[70%] relative;
+    background-color: var(--bg-message-received);
+    color: var(--text-message-received);
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+  }
+
+  /* ============================================================
+     Conversation List Item
+     ============================================================ */
+  .conv-item {
+    @apply flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors duration-100;
+  }
+  .conv-item:hover {
+    background-color: var(--bg-hover);
+  }
+  .conv-item.active {
+    background-color: var(--bg-active);
+  }
+
+  /* ============================================================
+     Input / Composer
+     ============================================================ */
+  .signal-input {
+    @apply w-full rounded-full px-4 py-2 text-sm outline-none transition-all;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+  .signal-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-light);
+  }
+  .signal-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .composer-input {
+    @apply w-full px-4 py-3 text-sm outline-none resize-none;
+    background: transparent;
+    color: var(--text-primary);
+    min-height: 44px;
+    max-height: 200px;
+  }
+  .composer-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* ============================================================
+     Buttons
+     ============================================================ */
+  .btn-primary {
+    @apply flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-all duration-150;
+    background-color: var(--accent);
+  }
+  .btn-primary:hover {
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-ghost {
+    @apply flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-150;
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .icon-btn {
+    @apply flex items-center justify-center w-9 h-9 rounded-full transition-all duration-100 cursor-pointer;
+    color: var(--text-muted);
+  }
+  .icon-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  /* ============================================================
+     Avatar
+     ============================================================ */
+  .avatar {
+    @apply rounded-full object-cover flex-shrink-0;
+    background-color: var(--accent-light);
+  }
+
+  .avatar-fallback {
+    @apply rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 text-xs;
+    background: linear-gradient(135deg, var(--accent), #5B8CEE);
+  }
+
+  .online-dot {
+    @apply absolute bottom-0 right-0 rounded-full border-2;
+    width: 10px;
+    height: 10px;
+    background-color: var(--online);
+    border-color: var(--bg-sidebar);
+  }
+
+  /* ============================================================
+     Badges
+     ============================================================ */
+  .unread-badge {
+    @apply flex items-center justify-center rounded-full text-white text-[10px] font-bold flex-shrink-0;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background-color: var(--unread-badge);
+  }
+
+  /* ============================================================
+     Typing Indicator
+     ============================================================ */
+  .typing-dots {
+    @apply flex items-center gap-1;
+  }
+  .typing-dot {
+    @apply rounded-full;
+    width: 6px;
+    height: 6px;
+    background-color: var(--text-muted);
+    animation: typingBounce 1.2s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* ============================================================
+     Skeleton / Shimmer
+     ============================================================ */
+  .skeleton {
+    @apply rounded;
+    background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-active) 50%, var(--bg-hover) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ============================================================
+     Toast
+     ============================================================ */
+  .toast-container {
+    @apply fixed top-4 right-4 flex flex-col gap-2 z-50;
+  }
+
+  .toast {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium shadow-lg;
+    max-width: 360px;
+    animation: toastSlideIn 0.3s ease-out;
+    backdrop-filter: blur(12px);
+  }
+
+  @keyframes toastSlideIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ============================================================
+     Message appear animation
+     ============================================================ */
+  .message-appear {
+    animation: messageAppear 0.15s ease-out;
+  }
+
+  @keyframes messageAppear {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ============================================================
+     Panel slide
+     ============================================================ */
+  .panel-slide-in {
+    animation: panelSlideIn 0.12s ease-out;
+  }
+
+  @keyframes panelSlideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ============================================================
+     Status Ticks
+     ============================================================ */
+  .tick-sent { color: #9CA3AF; }
+  .tick-delivered { color: #9CA3AF; }
+  .tick-read { color: #60A5FA; }
+
+  /* ============================================================
+     Scrollable message area
+     ============================================================ */
+  .messages-container {
+    @apply flex flex-col gap-1 px-4 py-2 overflow-y-auto;
+    scrollbar-gutter: stable;
+  }
+
+  /* ============================================================
+     Empty state
+     ============================================================ */
+  .empty-state {
+    @apply flex flex-col items-center justify-center gap-4 h-full text-center px-8;
+    color: var(--text-muted);
+  }
+
+  /* ============================================================
+     Modal overlay
+     ============================================================ */
+  .modal-overlay {
+    @apply fixed inset-0 flex items-center justify-center z-40;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.15s ease-out;
+  }
+
+  .modal-content {
+    @apply rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl;
+    background-color: var(--bg-sidebar);
+    border: 1px solid var(--border);
+    animation: scaleIn 0.15s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* ============================================================
+     Section header (Settings)
+     ============================================================ */
+  .section-header {
+    @apply text-xs uppercase tracking-widest font-medium px-4 py-2;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* ============================================================
+     Search Bar
+     ============================================================ */
+  .search-bar {
+    @apply flex items-center gap-2 mx-4 my-2 px-3 py-2 rounded-full text-sm;
+    background-color: var(--bg-input);
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    transition: border-color 0.2s;
+  }
+  .search-bar:focus-within {
+    border-color: var(--accent);
+  }
+  .search-bar input {
+    @apply bg-transparent outline-none text-sm w-full;
+    color: var(--text-primary);
+  }
+  .search-bar input::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+/* ============================================================
+   Responsive: Mobile
+   ============================================================ */
+@media (max-width: 768px) {
+  .left-rail {
+    display: none;
+  }
+  .chat-list-pane {
+    width: 100%;
+  }
+  .chat-pane {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    transform: translateX(100%);
+    transition: transform 0.25s ease-out;
+  }
+  .chat-pane.mobile-open {
+    transform: translateX(0);
+  }
+}
