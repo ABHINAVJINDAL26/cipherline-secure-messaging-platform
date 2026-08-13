@@ -37,7 +37,30 @@ export default function ConversationList({ currentUser }: ConversationListProps)
     <div className="flex flex-col h-full relative">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Chats</h1>
+        <div className="flex items-center gap-3">
+          {/* User profile button (especially useful on mobile where LeftRail is hidden) */}
+          <button
+            onClick={() => useUIStore.getState().setSettingsOpen(true)}
+            className="flex-shrink-0 transition-transform active:scale-95"
+            title="Profile & Settings"
+            aria-label="Open Profile & Settings"
+          >
+            {currentUser.avatar_url ? (
+              <img
+                src={currentUser.avatar_url}
+                alt={currentUser.display_name}
+                className="w-9 h-9 rounded-full object-cover border border-[var(--border)]"
+              />
+            ) : (
+              <div className="avatar-fallback w-9 h-9 text-xs">{getInitials(currentUser.display_name)}</div>
+            )}
+          </button>
+          <div>
+            <h1 className="text-lg font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>Chats</h1>
+            <p className="text-[11px] truncate max-w-[120px]" style={{ color: 'var(--text-muted)' }}>@{currentUser.username || currentUser.phone_number}</p>
+          </div>
+        </div>
+
         <div className="flex items-center gap-1">
           <button className="icon-btn" onClick={() => setNewGroupOpen(true)} title="New Group">
             <Users size={18} />
@@ -97,12 +120,12 @@ export default function ConversationList({ currentUser }: ConversationListProps)
 
       {/* Floating Action Button for New Chat */}
       <button 
-        className="absolute bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
-        style={{ background: 'var(--accent)', color: '#fff', zIndex: 10 }}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95"
+        style={{ background: 'var(--accent)', color: '#fff', zIndex: 30 }}
         onClick={() => setNewChatOpen(true)}
         aria-label="New Chat"
       >
-        <Plus size={24} strokeWidth={2.5} />
+        <Plus size={26} strokeWidth={2.5} />
       </button>
     </div>
   );
