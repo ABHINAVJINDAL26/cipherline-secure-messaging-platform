@@ -4,20 +4,19 @@ from datetime import datetime
 from database import get_db
 from app.models.models import User
 from app.schemas.schemas import (
-    RegisterRequest, VerifyOTPRequest, LoginRequest, TokenResponse, UserResponse
+    RegisterRequest, LoginRequest, TokenResponse, UserResponse, GoogleLoginRequest
 )
-from app.core.security import hash_password, verify_password, create_access_token, verify_mock_otp
+from app.core.security import hash_password, verify_password, create_access_token
+from google.oauth2 import id_token
+from google.auth.transport import requests
 import uuid
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# In-memory pending registrations (phone/username → hashed_password)
-_pending: dict = {}
 
-
-@router.post("/register", status_code=201)
+@router.post("/register", response_model=TokenResponse, status_code=201)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
-    """Step 1: register with phone/username + password → mock OTP is always 123456."""
+    """Register directly with username/phone, display name, password → returns JWT."""
     identifier = payload.phone_number or payload.username
     if not identifier:
         raise HTTPException(400, "phone_number or username required")
@@ -29,38 +28,13 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(400, "User already registered")
 
-    _pending[identifier] = hash_password(payload.password)
-    return {"message": "OTP sent (use 123456)", "otp_hint": "123456"}
-
-
-@router.post("/verify-otp", response_model=TokenResponse)
-def verify_otp(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
-    """Step 2: verify OTP + set display name → issue JWT."""
-    identifier = payload.phone_number or payload.username
-    if not identifier:
-        raise HTTPException(400, "phone_number or username required")
-
-    if not verify_mock_otp(payload.otp):
-        raise HTTPException(400, "Invalid OTP")
-
-    password_hash = _pending.get(identifier)
-    if not password_hash:
-        raise HTTPException(400, "No pending registration. Call /auth/register first.")
-
-    # Check duplicate again (race condition guard)
-    existing = db.query(User).filter(
-        (User.phone_number == payload.phone_number) | (User.username == payload.username)
-    ).first()
-    if existing:
-        raise HTTPException(400, "User already exists")
-
     user = User(
         id=str(uuid.uuid4()),
         phone_number=payload.phone_number,
         username=payload.username,
         display_name=payload.display_name,
-        avatar_url=payload.avatar_url,
-        password_hash=password_hash,
+        avatar_url=payload.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={payload.display_name}",
+        password_hash=hash_password(payload.password),
         is_online=True,
         last_seen=datetime.utcnow(),
     )
@@ -68,7 +42,53 @@ def verify_otp(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    _pending.pop(identifier, None)
+    token = create_access_token({"sub": user.id})
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse.model_validate(user),
+    )
+
+
+@router.post("/google", response_model=TokenResponse)
+def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
+    """Log in or sign up using Google ID Token (OAuth 2.0)."""
+    try:
+        # Verify Google Token
+        idinfo = id_token.verify_oauth2_token(payload.credential, requests.Request())
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid Google token: {str(e)}")
+
+    email = idinfo.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Google account has no email address")
+
+    display_name = idinfo.get("name") or email.split("@")[0]
+    avatar_url = idinfo.get("picture")
+
+    # Try finding user by email/username
+    user = db.query(User).filter(User.username == email).first()
+    if not user:
+        # Create a new user
+        user = User(
+            id=str(uuid.uuid4()),
+            username=email,
+            display_name=display_name,
+            avatar_url=avatar_url,
+            password_hash=None,  # OAuth users have no password hash locally
+            is_online=True,
+            last_seen=datetime.utcnow(),
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    else:
+        # Update details and set online
+        user.is_online = True
+        user.last_seen = datetime.utcnow()
+        if avatar_url:
+            user.avatar_url = avatar_url
+        db.commit()
+        db.refresh(user)
 
     token = create_access_token({"sub": user.id})
     return TokenResponse(

@@ -35,16 +35,16 @@ export default api;
 // Auth API
 // ---------------------------------------------------------------------------
 export const authApi = {
-  register: (data: { phone_number?: string; username?: string; password: string }) =>
-    api.post('/auth/register', data),
-
-  verifyOtp: (data: {
+  register: (data: {
     phone_number?: string;
     username?: string;
-    otp: string;
+    password: string;
     display_name: string;
     avatar_url?: string;
-  }) => api.post('/auth/verify-otp', data),
+  }) => api.post('/auth/register', data),
+
+  googleLogin: (credential: string) =>
+    api.post('/auth/google', { credential }),
 
   login: (data: { phone_number?: string; username?: string; password: string }) =>
     api.post('/auth/login', data),

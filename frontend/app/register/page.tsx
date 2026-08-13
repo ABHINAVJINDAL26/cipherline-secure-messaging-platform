@@ -1,69 +1,83 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
-
-type Step = 'register' | 'otp' | 'profile';
+import { useAuthStore } from '@/store/authStore';
+import { wsClient } from '@/lib/websocket';
+import { TokenResponse } from '@/types';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>('register');
-  const [identifier, setIdentifier] = useState('');
+  const { setAuth } = useAuthStore();
+  const [username, setUsername] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle Google OAuth callback
+  const handleGoogleLogin = async (response: any) => {
     setError('');
     setLoading(true);
     try {
-      const isPhone = identifier.startsWith('+');
-      await authApi.register({
-        phone_number: isPhone ? identifier : undefined,
-        username: !isPhone ? identifier : undefined,
-        password,
-      });
-      setStep('otp');
+      const res = await authApi.googleLogin(response.credential);
+      const data: TokenResponse = res.data;
+      setAuth(data.user, data.access_token);
+      wsClient.connect(data.user.id, data.access_token);
+      router.replace('/chats');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed');
+      setError(err.response?.data?.detail || 'Google sign-in failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.length !== 6) { setError('OTP must be 6 digits'); return; }
-    setError('');
-    setStep('profile');
-  };
+  useEffect(() => {
+    // Initialize Google Sign-In button
+    const initGoogle = () => {
+      if (typeof window !== 'undefined' && (window as any).google) {
+        const client_id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'your-google-client-id.apps.googleusercontent.com';
+        (window as any).google.accounts.id.initialize({
+          client_id: client_id,
+          callback: handleGoogleLogin,
+        });
+        (window as any).google.accounts.id.renderButton(
+          document.getElementById('google-signin-btn'),
+          { theme: 'outline', size: 'large', width: 340, shape: 'circle' }
+        );
+      }
+    };
 
-  const handleProfile = async (e: React.FormEvent) => {
+    const timer = setTimeout(initGoogle, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!displayName.trim()) { setError('Display name required'); return; }
+    if (!displayName.trim()) { setError('Display name is required'); return; }
+    if (!username.trim() && !phoneNumber.trim()) { setError('Username or Phone Number is required'); return; }
     setError('');
     setLoading(true);
+
     try {
-      const isPhone = identifier.startsWith('+');
-      const res = await authApi.verifyOtp({
-        phone_number: isPhone ? identifier : undefined,
-        username: !isPhone ? identifier : undefined,
-        otp,
-        display_name: displayName,
-        avatar_url: avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}`,
+      const res = await authApi.register({
+        username: username.trim() || undefined,
+        phone_number: phoneNumber.trim() || undefined,
+        password,
+        display_name: displayName.trim(),
+        avatar_url: avatarUrl.trim() || undefined,
       });
-      const { access_token, user } = res.data;
-      localStorage.setItem('signal_token', access_token);
-      localStorage.setItem('signal_user', JSON.stringify(user));
+
+      const data: TokenResponse = res.data;
+      setAuth(data.user, data.access_token);
+      wsClient.connect(data.user.id, data.access_token);
       router.replace('/chats');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Verification failed');
+      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -73,80 +87,75 @@ export default function RegisterPage() {
     <div className="flex items-center justify-center min-h-screen" style={{ background: 'var(--bg-app)' }}>
       <div className="w-full max-w-sm mx-auto px-6">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-6">
           <div className="flex items-center justify-center w-16 h-16 rounded-2xl mb-4" style={{ background: 'var(--accent)' }}>
             <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
               <path d="M32 10C24.27 10 18 16.27 18 24v6H14v26h36V30h-4v-6c0-7.73-6.27-14-14-14zm0 4c5.52 0 10 4.48 10 10v6H22v-6c0-5.52 4.48-10 10-10zm0 18a4 4 0 110 8 4 4 0 010-8z" fill="white"/>
             </svg>
           </div>
-          {/* Step indicators */}
-          <div className="flex gap-2 mt-2">
-            {(['register', 'otp', 'profile'] as Step[]).map((s, i) => (
-              <div key={s} className="w-6 h-1 rounded-full transition-all"
-                style={{ background: s === step || (i < ['register','otp','profile'].indexOf(step)) ? 'var(--accent)' : 'var(--border)' }}/>
-            ))}
-          </div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Create Account</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Cipherline Secure messaging</p>
         </div>
 
-        {/* Step 1: Register */}
-        {step === 'register' && (
-          <form onSubmit={handleRegister} className="flex flex-col gap-4">
-            <div className="text-center mb-2">
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Create Account</h2>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Enter your phone or username</p>
-            </div>
-            <input className="signal-input" type="text" placeholder="Username or +1-555-0001"
-              value={identifier} onChange={(e) => setIdentifier(e.target.value)} required />
+        <form onSubmit={handleRegister} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Username</label>
+            <input className="signal-input" type="text" placeholder="e.g. alice"
+              value={username} onChange={(e) => setUsername(e.target.value)} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Phone Number (Optional)</label>
+            <input className="signal-input" type="text" placeholder="e.g. +1-555-0001"
+              value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Display Name</label>
+            <input className="signal-input" type="text" placeholder="e.g. Alice Smith"
+              value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Password</label>
             <input className="signal-input" type="password" placeholder="Create a password"
               value={password} onChange={(e) => setPassword(e.target.value)} required />
-            {error && <p className="text-xs text-center" style={{ color: 'var(--danger)' }}>{error}</p>}
-            <button className="btn-primary mt-2" type="submit" disabled={loading}>
-              {loading ? 'Sending...' : 'Continue'}
-            </button>
-          </form>
-        )}
+          </div>
 
-        {/* Step 2: OTP */}
-        {step === 'otp' && (
-          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
-            <div className="text-center mb-2">
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Enter OTP</h2>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                Use code <span className="font-mono font-bold" style={{ color: 'var(--accent)' }}>123456</span>
-              </p>
-            </div>
-            <input className="signal-input text-center text-2xl tracking-widest font-mono"
-              type="text" placeholder="123456" maxLength={6}
-              value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} required />
-            {error && <p className="text-xs text-center" style={{ color: 'var(--danger)' }}>{error}</p>}
-            <button className="btn-primary" type="submit">Verify OTP</button>
-            <button type="button" className="btn-ghost text-sm" onClick={() => setStep('register')}>
-              Back
-            </button>
-          </form>
-        )}
-
-        {/* Step 3: Profile */}
-        {step === 'profile' && (
-          <form onSubmit={handleProfile} className="flex flex-col gap-4">
-            <div className="text-center mb-2">
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Set Up Profile</h2>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>How should others see you?</p>
-            </div>
-            <input className="signal-input" type="text" placeholder="Your display name"
-              value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
-            <input className="signal-input" type="url" placeholder="Avatar URL (optional)"
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Avatar URL (Optional)</label>
+            <input className="signal-input" type="url" placeholder="Link to profile picture"
               value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
-            {error && <p className="text-xs text-center" style={{ color: 'var(--danger)' }}>{error}</p>}
-            <button className="btn-primary mt-2" type="submit" disabled={loading}>
-              {loading ? 'Creating account...' : 'Get Started'}
-            </button>
-          </form>
-        )}
+          </div>
 
-        <p className="text-center mt-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+          {error && (
+            <p className="text-xs text-center py-2 px-3 rounded-lg mt-1"
+              style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--danger)' }}>
+              {error}
+            </p>
+          )}
+
+          <button className="btn-primary mt-2" type="submit" disabled={loading}>
+            {loading ? 'Creating Account...' : 'Register'}
+          </button>
+        </form>
+
+        {/* Google Sign-In Option */}
+        <div className="flex items-center my-4">
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          <span className="px-3 text-xs text-gray-500 uppercase">Or</span>
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+        </div>
+
+        <div className="flex justify-center mb-6">
+          <div id="google-signin-btn" />
+        </div>
+
+        <p className="text-center text-sm" style={{ color: 'var(--text-muted)' }}>
           Already have an account?{' '}
-          <Link href="/login" className="font-semibold" style={{ color: 'var(--accent)' }}>Sign In</Link>
+          <Link href="/login" className="font-semibold" style={{ color: 'var(--accent)' }}>
+            Sign In
+          </Link>
         </p>
       </div>
     </div>

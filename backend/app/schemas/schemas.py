@@ -12,6 +12,8 @@ class RegisterRequest(BaseModel):
     phone_number: Optional[str] = None
     username: Optional[str] = None
     password: str
+    display_name: str
+    avatar_url: Optional[str] = None
 
 
 class VerifyOTPRequest(BaseModel):
@@ -20,6 +22,10 @@ class VerifyOTPRequest(BaseModel):
     otp: str
     display_name: str
     avatar_url: Optional[str] = None
+
+
+class GoogleLoginRequest(BaseModel):
+    credential: str
 
 
 class LoginRequest(BaseModel):
