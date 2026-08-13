@@ -9,19 +9,14 @@ from app.models.models import ConversationType, MemberRole, MessageStatusEnum
 # ---------------------------------------------------------------------------
 
 class RegisterRequest(BaseModel):
-    phone_number: Optional[str] = None
-    username: Optional[str] = None
+    phone_number: str
     password: str
     display_name: str
-    avatar_url: Optional[str] = None
 
 
 class VerifyOTPRequest(BaseModel):
-    phone_number: Optional[str] = None
-    username: Optional[str] = None
+    phone_number: str
     otp: str
-    display_name: str
-    avatar_url: Optional[str] = None
 
 
 class GoogleLoginRequest(BaseModel):
@@ -29,8 +24,7 @@ class GoogleLoginRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    phone_number: Optional[str] = None
-    username: Optional[str] = None
+    phone_number: str
     password: str
 
 

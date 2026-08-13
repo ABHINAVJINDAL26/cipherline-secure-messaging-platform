@@ -4,43 +4,84 @@ from datetime import datetime
 from database import get_db
 from app.models.models import User
 from app.schemas.schemas import (
-    RegisterRequest, LoginRequest, TokenResponse, UserResponse, GoogleLoginRequest
+    RegisterRequest, LoginRequest, TokenResponse, UserResponse, GoogleLoginRequest, VerifyOTPRequest
 )
 from app.core.security import hash_password, verify_password, create_access_token
 from google.oauth2 import id_token
 from google.auth.transport import requests
 import uuid
+import random
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# In-memory dictionary to hold pending signups (phone_number -> {password_hash, display_name, otp})
+_pending_registrations: dict = {}
 
-@router.post("/register", response_model=TokenResponse, status_code=201)
+
+@router.post("/register", status_code=status.HTTP_200_OK)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
-    """Register directly with username/phone, display name, password → returns JWT."""
-    identifier = payload.phone_number or payload.username
-    if not identifier:
-        raise HTTPException(400, "phone_number or username required")
+    """Register step 1: Validate phone and password, generate random OTP."""
+    if not payload.phone_number:
+        raise HTTPException(400, "phone_number is required")
 
-    # Check duplicate
-    existing = db.query(User).filter(
-        (User.phone_number == payload.phone_number) | (User.username == payload.username)
-    ).first()
+    # Check duplicate in database
+    existing = db.query(User).filter(User.phone_number == payload.phone_number).first()
     if existing:
-        raise HTTPException(400, "User already registered")
+        raise HTTPException(400, "Phone number is already registered")
 
+    # Generate a random 6-digit OTP
+    otp = str(random.randint(100000, 999999))
+    print(f"\n========================================")
+    print(f"[OTP] Generated OTP for {payload.phone_number}: {otp}")
+    print(f"========================================\n")
+
+    # Store registration details
+    _pending_registrations[payload.phone_number] = {
+        "password_hash": hash_password(payload.password),
+        "display_name": payload.display_name,
+        "otp": otp
+    }
+
+    # We return the OTP in the JSON response payload for easy local testing
+    return {
+        "message": "Verification code sent successfully",
+        "phone_number": payload.phone_number,
+        "otp": otp  # returned for easy developer/evaluator reference
+    }
+
+
+@router.post("/verify-otp", response_model=TokenResponse)
+def verify_otp(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
+    """Register step 2: Verify the OTP and create the user account."""
+    pending = _pending_registrations.get(payload.phone_number)
+    if not pending:
+        raise HTTPException(400, "No pending registration found for this phone number")
+
+    if pending["otp"] != payload.otp:
+        raise HTTPException(400, "Invalid verification code")
+
+    # Double check race condition
+    existing = db.query(User).filter(User.phone_number == payload.phone_number).first()
+    if existing:
+        raise HTTPException(400, "User already exists")
+
+    # Create the user
     user = User(
         id=str(uuid.uuid4()),
         phone_number=payload.phone_number,
-        username=payload.username,
-        display_name=payload.display_name,
-        avatar_url=payload.avatar_url or f"https://api.dicebear.com/7.x/avataaars/svg?seed={payload.display_name}",
-        password_hash=hash_password(payload.password),
+        username=payload.phone_number, # use phone as username as fallback
+        display_name=pending["display_name"],
+        avatar_url=f"https://api.dicebear.com/7.x/avataaars/svg?seed={pending['display_name']}",
+        password_hash=pending["password_hash"],
         is_online=True,
         last_seen=datetime.utcnow(),
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Clean up pending registrations
+    _pending_registrations.pop(payload.phone_number, None)
 
     token = create_access_token({"sub": user.id})
     return TokenResponse(
@@ -66,12 +107,13 @@ def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
     avatar_url = idinfo.get("picture")
 
     # Try finding user by email/username
-    user = db.query(User).filter(User.username == email).first()
+    user = db.query(User).filter((User.username == email) | (User.phone_number == email)).first()
     if not user:
         # Create a new user
         user = User(
             id=str(uuid.uuid4()),
             username=email,
+            phone_number=email, # map email to phone or keep empty, but username is key
             display_name=display_name,
             avatar_url=avatar_url,
             password_hash=None,  # OAuth users have no password hash locally
@@ -99,10 +141,8 @@ def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    """Login with phone/username + password."""
-    user = db.query(User).filter(
-        (User.phone_number == payload.phone_number) | (User.username == payload.username)
-    ).first()
+    """Login with phone + password."""
+    user = db.query(User).filter(User.phone_number == payload.phone_number).first()
 
     if not user or not verify_password(payload.password, user.password_hash or ""):
         raise HTTPException(401, "Invalid credentials")

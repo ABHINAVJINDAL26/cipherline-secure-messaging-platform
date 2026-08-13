@@ -11,7 +11,7 @@ import { TokenResponse } from '@/types';
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
-  const [identifier, setIdentifier] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,7 +49,6 @@ export default function LoginPage() {
       }
     };
 
-    // Retry in case script is still loading
     const timer = setTimeout(initGoogle, 800);
     return () => clearTimeout(timer);
   }, []);
@@ -60,10 +59,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const isPhone = identifier.startsWith('+');
       const res = await authApi.login({
-        phone_number: isPhone ? identifier : undefined,
-        username: !isPhone ? identifier : undefined,
+        phone_number: phoneNumber.trim(),
         password,
       });
 
@@ -96,16 +93,16 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-              Phone or Username
+              Phone Number
             </label>
             <input
               className="signal-input"
               type="text"
-              placeholder="Username or +1-555-0001"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="+1-555-0001"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
               required
-              autoComplete="username"
+              autoComplete="tel"
             />
           </div>
 

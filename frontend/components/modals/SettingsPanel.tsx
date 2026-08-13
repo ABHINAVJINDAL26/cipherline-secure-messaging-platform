@@ -12,17 +12,35 @@ interface SettingsPanelProps {
   user: User;
 }
 
+const DEFAULT_AVATARS = [
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=Abhinav',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=robot',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel',
+  'https://api.dicebear.com/7.x/lorelei/svg?seed=lorelei',
+  'https://api.dicebear.com/7.x/micah/svg?seed=micah',
+  'https://api.dicebear.com/7.x/adventurer/svg?seed=adventure'
+];
+
 export default function SettingsPanel({ user }: SettingsPanelProps) {
   const { setSettingsOpen, theme, setTheme, addToast } = useUIStore();
   const { updateUser, logout } = useAuthStore();
   const [editName, setEditName] = useState(user.display_name);
   const [editAbout, setEditAbout] = useState(user.about_status || '');
+  const [editAvatarUrl, setEditAvatarUrl] = useState(user.avatar_url || '');
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    if (!editName.trim()) {
+      addToast({ message: 'Display name cannot be empty', type: 'error' });
+      return;
+    }
     setSaving(true);
     try {
-      const res = await usersApi.updateMe({ display_name: editName, about_status: editAbout });
+      const res = await usersApi.updateMe({
+        display_name: editName.trim(),
+        about_status: editAbout.trim(),
+        avatar_url: editAvatarUrl
+      });
       updateUser(res.data);
       addToast({ message: 'Profile updated!', type: 'success' });
     } catch {
@@ -69,20 +87,41 @@ export default function SettingsPanel({ user }: SettingsPanelProps) {
           </button>
         </div>
 
-        {/* Profile */}
-        <div className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{ background: 'var(--bg-input)' }}>
-          {user.avatar_url ? (
-            <img src={user.avatar_url} alt={user.display_name} className="w-14 h-14 rounded-full object-cover" />
+        {/* Profile Card */}
+        <div className="flex items-center gap-3 p-3 rounded-xl mb-3" style={{ background: 'var(--bg-input)' }}>
+          {editAvatarUrl ? (
+            <img src={editAvatarUrl} alt={editName} className="w-14 h-14 rounded-full object-cover border-2" style={{ borderColor: 'var(--accent)' }} />
           ) : (
-            <div className="avatar-fallback w-14 h-14 text-base">{getInitials(user.display_name)}</div>
+            <div className="avatar-fallback w-14 h-14 text-base">{getInitials(editName)}</div>
           )}
           <div className="flex-1">
-            <input className="signal-input text-sm mb-1" value={editName}
+            <input className="signal-input text-sm mb-1.5" value={editName}
               onChange={(e) => setEditName(e.target.value)} placeholder="Display name" />
             <input className="signal-input text-xs" value={editAbout}
               onChange={(e) => setEditAbout(e.target.value)} placeholder="About..." />
           </div>
         </div>
+
+        {/* Preset Avatar Selection */}
+        <div className="mb-4 px-1">
+          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Choose Profile Avatar:</p>
+          <div className="flex flex-wrap gap-2.5">
+            {DEFAULT_AVATARS.map((url, idx) => (
+              <button
+                key={idx}
+                onClick={() => setEditAvatarUrl(url)}
+                className="w-10 h-10 rounded-full overflow-hidden border-2 transition-all hover:scale-105"
+                style={{
+                  borderColor: editAvatarUrl === url ? 'var(--accent)' : 'transparent',
+                  boxShadow: editAvatarUrl === url ? '0 0 8px var(--accent)' : 'none',
+                }}
+              >
+                <img src={url} alt={`avatar-${idx}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button className="btn-primary w-full mb-4 text-sm py-2" onClick={handleSave} disabled={saving}>
           {saving ? 'Saving...' : 'Save Profile'}
         </button>

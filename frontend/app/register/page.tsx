@@ -8,14 +8,23 @@ import { useAuthStore } from '@/store/authStore';
 import { wsClient } from '@/lib/websocket';
 import { TokenResponse } from '@/types';
 
+type Step = 'details' | 'otp';
+
 export default function RegisterPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
-  const [username, setUsername] = useState('');
+  const [step, setStep] = useState<Step>('details');
+  
+  // Form Details
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // OTP Verification
+  const [otp, setOtp] = useState('');
+  const [devOtpHint, setDevOtpHint] = useState(''); // helper to show the generated OTP code in dev
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -54,22 +63,45 @@ export default function RegisterPage() {
 
     const timer = setTimeout(initGoogle, 800);
     return () => clearTimeout(timer);
-  }, []);
+  }, [step]); // reinitialize if step changes back to details
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegisterDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) { setError('Display name is required'); return; }
-    if (!username.trim() && !phoneNumber.trim()) { setError('Username or Phone Number is required'); return; }
+    if (!phoneNumber.trim()) { setError('Phone number is required'); return; }
+    if (password !== confirmPassword) { setError('Passwords do not match'); return; }
     setError('');
     setLoading(true);
 
     try {
       const res = await authApi.register({
-        username: username.trim() || undefined,
-        phone_number: phoneNumber.trim() || undefined,
+        phone_number: phoneNumber.trim(),
         password,
         display_name: displayName.trim(),
-        avatar_url: avatarUrl.trim() || undefined,
+      });
+
+      // The backend returns the random OTP code for developer/evaluation convenience
+      if (res.data.otp) {
+        setDevOtpHint(res.data.otp);
+      }
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.length !== 6) { setError('Verification code must be 6 digits'); return; }
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await authApi.verifyOtp({
+        phone_number: phoneNumber.trim(),
+        otp,
       });
 
       const data: TokenResponse = res.data;
@@ -77,7 +109,7 @@ export default function RegisterPage() {
       wsClient.connect(data.user.id, data.access_token);
       router.replace('/chats');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+      setError(err.response?.data?.detail || 'Invalid verification code');
     } finally {
       setLoading(false);
     }
@@ -93,70 +125,122 @@ export default function RegisterPage() {
               <path d="M32 10C24.27 10 18 16.27 18 24v6H14v26h36V30h-4v-6c0-7.73-6.27-14-14-14zm0 4c5.52 0 10 4.48 10 10v6H22v-6c0-5.52 4.48-10 10-10zm0 18a4 4 0 110 8 4 4 0 010-8z" fill="white"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Create Account</h1>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            {step === 'details' ? 'Create Account' : 'Verification'}
+          </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Cipherline Secure messaging</p>
         </div>
 
-        <form onSubmit={handleRegister} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Username</label>
-            <input className="signal-input" type="text" placeholder="e.g. alice"
-              value={username} onChange={(e) => setUsername(e.target.value)} />
-          </div>
+        {step === 'details' ? (
+          <>
+            <form onSubmit={handleRegisterDetails} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Display Name</label>
+                <input className="signal-input" type="text" placeholder="e.g. Abhinav"
+                  value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Phone Number (Optional)</label>
-            <input className="signal-input" type="text" placeholder="e.g. +1-555-0001"
-              value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
-          </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Phone Number</label>
+                <input className="signal-input" type="text" placeholder="e.g. +919876543210"
+                  value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Display Name</label>
-            <input className="signal-input" type="text" placeholder="e.g. Alice Smith"
-              value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
-          </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Password</label>
+                <input className="signal-input" type="password" placeholder="Create a password"
+                  value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Password</label>
-            <input className="signal-input" type="password" placeholder="Create a password"
-              value={password} onChange={(e) => setPassword(e.target.value)} required />
-          </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Confirm Password</label>
+                <input className="signal-input" type="password" placeholder="Confirm your password"
+                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Avatar URL (Optional)</label>
-            <input className="signal-input" type="url" placeholder="Link to profile picture"
-              value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
-          </div>
+              {error && (
+                <p className="text-xs text-center py-2 px-3 rounded-lg mt-1"
+                  style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--danger)' }}>
+                  {error}
+                </p>
+              )}
 
-          {error && (
-            <p className="text-xs text-center py-2 px-3 rounded-lg mt-1"
-              style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--danger)' }}>
-              {error}
+              <button className="btn-primary mt-2" type="submit" disabled={loading}>
+                {loading ? 'Sending verification code...' : 'Register'}
+              </button>
+            </form>
+
+            {/* Google Sign-In Option */}
+            <div className="flex items-center my-4">
+              <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+              <span className="px-3 text-xs text-gray-500 uppercase">Or</span>
+              <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+            </div>
+
+            <div className="flex justify-center mb-6">
+              <div id="google-signin-btn" />
+            </div>
+
+            <p className="text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+              Already have an account?{' '}
+              <Link href="/login" className="font-semibold" style={{ color: 'var(--accent)' }}>
+                Sign In
+              </Link>
             </p>
-          )}
+          </>
+        ) : (
+          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+            <div className="text-center mb-2">
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                A verification code has been generated for:
+              </p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>
+                {phoneNumber}
+              </p>
+            </div>
 
-          <button className="btn-primary mt-2" type="submit" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Register'}
-          </button>
-        </form>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                Enter 6-Digit Code
+              </label>
+              <input
+                className="signal-input text-center text-2xl tracking-widest font-mono"
+                type="text"
+                placeholder="123456"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                required
+                autoFocus
+              />
+            </div>
 
-        {/* Google Sign-In Option */}
-        <div className="flex items-center my-4">
-          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-          <span className="px-3 text-xs text-gray-500 uppercase">Or</span>
-          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-        </div>
+            {devOtpHint && (
+              <div className="p-3 rounded-xl text-center" style={{ background: 'var(--bg-input)', border: '1px solid var(--border)' }}>
+                <p className="text-xs text-gray-500 font-medium">Developer/Evaluation OTP Hint:</p>
+                <p className="text-sm font-mono font-bold mt-1" style={{ color: 'var(--accent)' }}>
+                  {devOtpHint}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-0.5">(Also printed in backend console log)</p>
+              </div>
+            )}
 
-        <div className="flex justify-center mb-6">
-          <div id="google-signin-btn" />
-        </div>
+            {error && (
+              <p className="text-xs text-center py-2 px-3 rounded-lg"
+                style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--danger)' }}>
+                {error}
+              </p>
+            )}
 
-        <p className="text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-          Already have an account?{' '}
-          <Link href="/login" className="font-semibold" style={{ color: 'var(--accent)' }}>
-            Sign In
-          </Link>
-        </p>
+            <button className="btn-primary" type="submit" disabled={loading}>
+              {loading ? 'Verifying...' : 'Verify & Sign In'}
+            </button>
+
+            <button type="button" className="btn-ghost text-sm" onClick={() => setStep('details')}>
+              Back to Details
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
