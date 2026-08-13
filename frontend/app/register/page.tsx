@@ -20,6 +20,7 @@ export default function RegisterPage() {
   // Form Details
   const [phoneNumber, setPhoneNumber] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -42,43 +43,7 @@ export default function RegisterPage() {
 
   const pStrength = getPasswordStrength();
 
-  // Handle Google OAuth callback
-  const handleGoogleLogin = async (response: any) => {
-    setError('');
-    setLoading(true);
-    try {
-      const res = await authApi.googleLogin(response.credential);
-      const data: TokenResponse = res.data;
-      setAuth(data.user, data.access_token);
-      wsClient.connect(data.user.id, data.access_token);
-      router.replace('/chats');
-    } catch (err: any) {
-      setError(getErrorMessage(err));
-      triggerShake();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // Initialize Google Sign-In button
-    const initGoogle = () => {
-      if (typeof window !== 'undefined' && (window as any).google) {
-        const client_id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'your-google-client-id.apps.googleusercontent.com';
-        (window as any).google.accounts.id.initialize({
-          client_id: client_id,
-          callback: handleGoogleLogin,
-        });
-        (window as any).google.accounts.id.renderButton(
-          document.getElementById('google-signin-btn'),
-          { theme: 'outline', size: 'large', width: 340, shape: 'circle' }
-        );
-      }
-    };
-
-    const timer = setTimeout(initGoogle, 800);
-    return () => clearTimeout(timer);
-  }, [step]);
+  // Google Sign-In removed for this demo
 
   const triggerShake = () => {
     setShouldShake(true);
@@ -88,6 +53,12 @@ export default function RegisterPage() {
   const handleRegisterDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) { setError('Display name is required'); return; }
+    if (!username.trim()) { setError('Username is required'); return; }
+    if (!/^[a-z0-9._]{3,20}$/.test(username.trim().toLowerCase())) {
+      setError('Username must be 3-20 chars, lowercase letters, numbers, dots, underscores only');
+      triggerShake();
+      return;
+    }
     if (!phoneNumber.trim()) { setError('Phone number is required'); return; }
     if (password !== confirmPassword) { setError('Passwords do not match'); triggerShake(); return; }
     setError('');
@@ -98,6 +69,7 @@ export default function RegisterPage() {
         phone_number: phoneNumber.trim(),
         password,
         display_name: displayName.trim(),
+        username: username.trim().toLowerCase(),
       });
 
       if (res.data.otp) {
@@ -266,9 +238,19 @@ export default function RegisterPage() {
                   <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Display Name</label>
                   <div className="signal-input-container">
                     <User size={18} className="signal-input-icon" />
-                    <input className="signal-input signal-input-with-icon w-full" type="text" placeholder="Enter display name"
+                    <input className="signal-input signal-input-with-icon w-full" type="text" placeholder="Your full name"
                       value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
                   </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Username</label>
+                  <div className="signal-input-container">
+                    <span className="signal-input-icon text-sm font-bold" style={{ left: '14px' }}>@</span>
+                    <input className="signal-input signal-input-with-icon w-full" type="text" placeholder="e.g. john_doe"
+                      value={username} onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))} required />
+                  </div>
+                  <p className="text-[10px] ml-1" style={{ color: 'var(--text-muted)' }}>Others will find you by this. 3–20 chars, letters/numbers/_.</p>
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -330,16 +312,7 @@ export default function RegisterPage() {
                 </button>
               </form>
 
-              {/* Google Button */}
-              <div className="flex items-center my-4">
-                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-                <span className="px-3 text-xs uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>Or</span>
-                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-              </div>
-
-              <div className="flex justify-center mb-6">
-                <div id="google-signin-btn" className="hover:scale-[1.02] transition-transform duration-200" />
-              </div>
+              {/* Social sign-in removed */}
 
               <p className="text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                 Already have an account?{' '}

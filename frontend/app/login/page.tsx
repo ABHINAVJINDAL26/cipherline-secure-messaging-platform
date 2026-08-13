@@ -19,43 +19,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [shouldShake, setShouldShake] = useState(false);
 
-  // Handle Google OAuth callback
-  const handleGoogleLogin = async (response: any) => {
-    setError('');
-    setLoading(true);
-    try {
-      const res = await authApi.googleLogin(response.credential);
-      const data: TokenResponse = res.data;
-      setAuth(data.user, data.access_token);
-      wsClient.connect(data.user.id, data.access_token);
-      router.replace('/chats');
-    } catch (err: any) {
-      setError(getErrorMessage(err));
-      triggerShake();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // Initialize Google Sign-In button
-    const initGoogle = () => {
-      if (typeof window !== 'undefined' && (window as any).google) {
-        const client_id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'your-google-client-id.apps.googleusercontent.com';
-        (window as any).google.accounts.id.initialize({
-          client_id: client_id,
-          callback: handleGoogleLogin,
-        });
-        (window as any).google.accounts.id.renderButton(
-          document.getElementById('google-signin-btn'),
-          { theme: 'outline', size: 'large', width: 340, shape: 'circle' }
-        );
-      }
-    };
-
-    const timer = setTimeout(initGoogle, 800);
-    return () => clearTimeout(timer);
-  }, []);
+  // Google Sign-In removed for this demo
 
   const triggerShake = () => {
     setShouldShake(true);
@@ -259,10 +223,7 @@ export default function LoginPage() {
             <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
           </div>
 
-          {/* Google Button */}
-          <div className="flex justify-center mb-6">
-            <div id="google-signin-btn" className="hover:scale-[1.02] transition-transform duration-200" />
-          </div>
+          {/* Social sign-in removed */}
 
           {/* Register Link */}
           <p className="text-center mt-6 text-sm" style={{ color: 'var(--text-muted)' }}>

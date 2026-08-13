@@ -39,15 +39,13 @@ export const authApi = {
     phone_number: string;
     password: string;
     display_name: string;
+    username: string;
   }) => api.post('/auth/register', data),
 
   verifyOtp: (data: {
     phone_number: string;
     otp: string;
   }) => api.post('/auth/verify-otp', data),
-
-  googleLogin: (credential: string) =>
-    api.post('/auth/google', { credential }),
 
   login: (data: { phone_number: string; password: string }) =>
     api.post('/auth/login', data),
@@ -98,7 +96,7 @@ export const conversationsApi = {
   // Messages
   getMessages: (id: string, limit = 50, before?: string) =>
     api.get(`/conversations/${id}/messages`, { params: { limit, before } }),
-  sendMessage: (id: string, data: { content: string; reply_to_message_id?: string }) =>
+  sendMessage: (id: string, data: { content: string; reply_to_message_id?: string; client_temp_id?: string }) =>
     api.post(`/conversations/${id}/messages`, data),
   // Members
   getMembers: (id: string) => api.get(`/conversations/${id}/members`),

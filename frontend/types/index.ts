@@ -35,12 +35,13 @@ export interface Message {
   conversation_id: string;
   sender_id: string;
   sender: User;
-  content: string | null;
-  attachment_url: string | null;
-  reply_to_message_id: string | null;
-  reply_to: Message | null;
+  content?: string;
+  attachment_url?: string;
+  reply_to_message_id?: string;
+  reply_to?: Message;
+  client_temp_id?: string; // Used for optimistic UI replacement
   is_deleted: boolean;
-  expires_at: string | null;
+  expires_at?: string;
   created_at: string;
   statuses: MessageStatusEntry[];
   reactions: MessageReaction[];

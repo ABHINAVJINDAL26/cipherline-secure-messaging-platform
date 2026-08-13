@@ -34,7 +34,7 @@ export default function ConversationList({ currentUser }: ConversationListProps)
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Chats</h1>
@@ -60,7 +60,7 @@ export default function ConversationList({ currentUser }: ConversationListProps)
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-20">
         {loading ? (
           // Skeleton loaders
           Array.from({ length: 5 }).map((_, i) => (
@@ -79,13 +79,8 @@ export default function ConversationList({ currentUser }: ConversationListProps)
               <Search size={24} style={{ color: 'var(--text-muted)' }} />
             </div>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {search ? 'No conversations found' : 'No chats yet. Start one!'}
+              {search ? 'No conversations found' : 'Find anyone by username to start a chat!'}
             </p>
-            {!search && (
-              <button className="btn-primary text-xs px-4 py-2" onClick={() => setNewChatOpen(true)}>
-                Start a Chat
-              </button>
-            )}
           </div>
         ) : (
           filtered.map((conv) => (
@@ -99,6 +94,16 @@ export default function ConversationList({ currentUser }: ConversationListProps)
           ))
         )}
       </div>
+
+      {/* Floating Action Button for New Chat */}
+      <button 
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
+        style={{ background: 'var(--accent)', color: '#fff', zIndex: 10 }}
+        onClick={() => setNewChatOpen(true)}
+        aria-label="New Chat"
+      >
+        <Plus size={24} strokeWidth={2.5} />
+      </button>
     </div>
   );
 }

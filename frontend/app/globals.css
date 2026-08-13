@@ -442,24 +442,81 @@
 }
 
 /* ============================================================
-   Responsive: Mobile
+   Responsive — Mobile First
    ============================================================ */
-@media (max-width: 768px) {
+
+/* --- Mobile (< 640px) --- */
+@media (max-width: 639px) {
   .left-rail {
     display: none;
   }
   .chat-list-pane {
     width: 100%;
+    flex-shrink: 0;
   }
   .chat-pane {
-    position: absolute;
+    position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: 20;
     transform: translateX(100%);
-    transition: transform 0.25s ease-out;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Safe area for notched phones */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .chat-pane.mobile-open {
     transform: translateX(0);
+  }
+  /* Modals full-width on mobile */
+  .modal-content {
+    border-radius: 1rem 1rem 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 100%;
+    margin: 0;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+  .modal-overlay {
+    align-items: flex-end;
+  }
+  /* Bigger tap targets on mobile */
+  .icon-btn {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .composer-input {
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+}
+
+/* --- Tablet (640px – 1023px) --- */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .left-rail {
+    display: none;
+  }
+  .chat-list-pane {
+    width: 280px;
+    flex-shrink: 0;
+  }
+  .chat-pane {
+    flex: 1;
+    transform: none !important;
+    position: relative;
+  }
+}
+
+/* --- Desktop (≥ 1024px) --- */
+@media (min-width: 1024px) {
+  .left-rail {
+    display: flex;
+  }
+  .chat-list-pane {
+    width: 320px;
+  }
+  .chat-pane {
+    transform: none !important;
+    position: relative;
   }
 }
 

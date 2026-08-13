@@ -131,7 +131,7 @@ export default function ChatsPage() {
       </div>
 
       {/* Main chat pane */}
-      <div className="chat-pane">
+      <div className={`chat-pane ${activeConversationId ? 'mobile-open' : ''}`}>
         {activeConversationId ? (
           <ChatPane conversationId={activeConversationId} currentUser={user} />
         ) : (

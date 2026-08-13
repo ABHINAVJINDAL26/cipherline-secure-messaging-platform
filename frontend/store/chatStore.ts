@@ -29,6 +29,7 @@ interface ChatState {
 
   markConversationRead: (conversationId: string) => void;
   updateLastMessage: (conversationId: string, message: Message) => void;
+  replaceTempMessage: (conversationId: string, tempId: string, realMessage: Message) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -60,12 +61,39 @@ export const useChatStore = create<ChatState>((set) => ({
   addMessage: (conversationId, message) =>
     set((state) => {
       const existing = state.messages[conversationId] || [];
-      // Avoid duplicates
+      // If we receive a message that matches a temp ID we already optimisticly inserted
+      if (message.client_temp_id) {
+        const tempIdx = existing.findIndex((m) => m.id === message.client_temp_id);
+        if (tempIdx !== -1) {
+          const newMessages = [...existing];
+          newMessages[tempIdx] = message;
+          return {
+            messages: {
+              ...state.messages,
+              [conversationId]: newMessages,
+            },
+          };
+        }
+      }
+      
+      // Avoid duplicates by regular ID
       if (existing.some((m) => m.id === message.id)) return state;
       return {
         messages: {
           ...state.messages,
           [conversationId]: [...existing, message],
+        },
+      };
+    }),
+
+  replaceTempMessage: (conversationId, tempId, realMessage) =>
+    set((state) => {
+      const existing = state.messages[conversationId] || [];
+      const updated = existing.map((m) => (m.id === tempId ? realMessage : m));
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: updated,
         },
       };
     }),

@@ -43,10 +43,7 @@ export default function Composer({ conversationId, currentUser, replyToMessageId
     const content = text.trim();
     if (!content || sending) return;
 
-    setText('');
-    setSending(true);
-
-    // Reset textarea height
+    // Reset textarea height instantly
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -55,21 +52,42 @@ export default function Composer({ conversationId, currentUser, replyToMessageId
     wsClient.sendTypingStop(conversationId);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const tempMessage: Message = {
+      id: tempId,
+      conversation_id: conversationId,
+      sender_id: currentUser.id,
+      sender: currentUser,
+      content,
+      reply_to_message_id: replyToMessageId || undefined,
+      reply_to: replyToMessage || undefined,
+      client_temp_id: tempId,
+      is_deleted: false,
+      created_at: new Date().toISOString(),
+      statuses: [{ user_id: currentUser.id, status: 'sent', updated_at: new Date().toISOString() }],
+      reactions: [],
+    };
+
+    // 1. Optimistic UI: Add immediately
+    addMessage(conversationId, tempMessage);
+    updateLastMessage(conversationId, tempMessage);
+    onCancelReply();
+    setText('');
+    textareaRef.current?.focus();
+
+    // 2. Send in background
     try {
       const res = await conversationsApi.sendMessage(conversationId, {
         content,
         reply_to_message_id: replyToMessageId || undefined,
+        client_temp_id: tempId,
       });
-      // The message will also come via WebSocket, but we add it optimistically
-      addMessage(conversationId, res.data);
+      // 3. Replace temp message with real message
+      useChatStore.getState().replaceTempMessage(conversationId, tempId, res.data);
       updateLastMessage(conversationId, res.data);
-      onCancelReply();
     } catch (err) {
       console.error('Failed to send message', err);
-      setText(content); // restore text on failure
-    } finally {
-      setSending(false);
-      textareaRef.current?.focus();
+      // Optional: Add a failed status or show a toast
     }
   };
 

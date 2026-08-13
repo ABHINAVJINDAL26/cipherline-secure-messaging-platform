@@ -12,15 +12,12 @@ class RegisterRequest(BaseModel):
     phone_number: str
     password: str
     display_name: str
+    username: str
 
 
 class VerifyOTPRequest(BaseModel):
     phone_number: str
     otp: str
-
-
-class GoogleLoginRequest(BaseModel):
-    credential: str
 
 
 class LoginRequest(BaseModel):
