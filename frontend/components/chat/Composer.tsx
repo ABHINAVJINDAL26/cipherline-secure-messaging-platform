@@ -17,7 +17,20 @@ interface ComposerProps {
 
 export default function Composer({ conversationId, currentUser, replyToMessageId, replyToMessage, onCancelReply }: ComposerProps) {
   const [text, setText] = useState('');
-  const [sending, setSending] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const EMOJI_LIST = [
+    '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂',
+    '🙃', '😉', '😌', '😍', '🥰', '😘', '😋', '😛', '😜', '🤪',
+    '😎', '🥳', '🥺', '😭', '😤', '👍', '👎', '👏', '🙌', '🙏',
+    '❤️', '💖', '🔥', '✨', '💯', '🚀', '🎉', '💡', '🌟', '🤝'
+  ];
+
+  const handleInsertEmoji = (emoji: string) => {
+    setText((prev) => prev + emoji);
+    setShowEmojiPicker(false);
+    textareaRef.current?.focus();
+  };
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { addMessage, updateLastMessage } = useChatStore();
@@ -124,11 +137,36 @@ export default function Composer({ conversationId, currentUser, replyToMessageId
       )}
 
       {/* Composer row */}
-      <div className="flex items-end gap-3 px-4 py-3">
-        {/* Emoji button */}
-        <button className="icon-btn flex-shrink-0 mb-1" aria-label="Emoji">
-          <Smile size={20} />
-        </button>
+      <div className="flex items-end gap-3 px-4 py-3 relative">
+        {/* Emoji button & Picker */}
+        <div className="relative">
+          <button
+            className="icon-btn flex-shrink-0 mb-1"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            aria-label="Emoji"
+            title="Choose emoji"
+          >
+            <Smile size={20} style={{ color: showEmojiPicker ? 'var(--accent)' : 'var(--text-muted)' }} />
+          </button>
+
+          {/* Emoji Picker Popup */}
+          {showEmojiPicker && (
+            <div
+              className="absolute bottom-12 left-0 z-30 p-3 rounded-2xl shadow-2xl grid grid-cols-8 gap-1.5 w-64 max-h-48 overflow-y-auto"
+              style={{ background: 'var(--bg-sidebar)', border: '1px solid var(--border)' }}
+            >
+              {EMOJI_LIST.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => handleInsertEmoji(emoji)}
+                  className="text-lg hover:scale-125 transition-transform w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--bg-hover)]"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Text area */}
         <div

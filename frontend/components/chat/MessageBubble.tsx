@@ -142,9 +142,8 @@ export default function MessageBubble({
           )}
         </div>
 
-        {/* Hover actions */}
-        {showActions && (
-          <div className={`flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center ${isMine ? 'flex-row' : 'flex-row-reverse'}`}>
+        {/* Hover / Tap actions */}
+        <div className={`flex items-center gap-1 opacity-80 md:opacity-0 group-hover:opacity-100 transition-opacity self-center ${isMine ? 'flex-row' : 'flex-row-reverse'}`}>
             <button className="icon-btn w-7 h-7" onClick={onReply} title="Reply">
               <Reply size={14} />
             </button>
