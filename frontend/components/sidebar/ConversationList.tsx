@@ -118,10 +118,10 @@ export default function ConversationList({ currentUser }: ConversationListProps)
         )}
       </div>
 
-      {/* Floating Action Button for New Chat */}
+      {/* Floating Action Button for New Chat (absolute to conversation list only) */}
       <button 
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95"
-        style={{ background: 'var(--accent)', color: '#fff', zIndex: 30 }}
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-transform hover:scale-105 active:scale-95 md:hidden"
+        style={{ background: 'var(--accent)', color: '#fff', zIndex: 10 }}
         onClick={() => setNewChatOpen(true)}
         aria-label="New Chat"
       >
