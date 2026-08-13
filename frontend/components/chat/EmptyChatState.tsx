@@ -3,10 +3,34 @@
 export default function EmptyChatState() {
   return (
     <div className="empty-state">
-      {/* Signal lock illustration */}
-      <div className="flex items-center justify-center w-24 h-24 rounded-3xl mb-2" style={{ background: 'var(--accent-light)' }}>
-        <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
-          <path d="M32 10C24.27 10 18 16.27 18 24v6H14v26h36V30h-4v-6c0-7.73-6.27-14-14-14zm0 4c5.52 0 10 4.48 10 10v6H22v-6c0-5.52 4.48-10 10-10zm0 18a4 4 0 110 8 4 4 0 010-8z" fill="var(--accent)"/>
+      {/* Premium Chat Illustration */}
+      <div className="flex items-center justify-center w-48 h-48 mb-2 relative" style={{ animation: 'scaleIn 0.3s ease-out' }}>
+        <svg width="180" height="180" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Background circle decoration */}
+          <circle cx="100" cy="100" r="80" fill="var(--accent-light)" opacity="0.4" />
+          <circle cx="100" cy="100" r="60" stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.3" />
+          
+          {/* Decorative floating dots */}
+          <circle cx="45" cy="65" r="5" fill="var(--accent)" opacity="0.6" />
+          <circle cx="160" cy="85" r="3" fill="var(--accent)" opacity="0.4" />
+          <circle cx="140" cy="145" r="6" fill="var(--accent)" opacity="0.5" />
+          
+          {/* Speech bubble 2 (background received message) */}
+          <g filter="drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.05))">
+            <path d="M50 115C50 101.193 61.1929 90 75 90H125C138.807 90 150 101.193 150 115C150 128.807 138.807 140 125 140H70L50 150V115Z" fill="var(--bg-input)" stroke="var(--border)" strokeWidth="1.5" />
+            {/* Typing status dots in bubble 2 */}
+            <circle cx="80" cy="115" r="3" fill="var(--text-muted)" opacity="0.6" />
+            <circle cx="95" cy="115" r="3" fill="var(--text-muted)" opacity="0.6" />
+            <circle cx="110" cy="115" r="3" fill="var(--text-muted)" opacity="0.6" />
+          </g>
+
+          {/* Speech bubble 1 (foreground sent message) */}
+          <g filter="drop-shadow(0px 8px 16px rgba(44, 107, 237, 0.15))">
+            <path d="M150 85C150 98.8071 138.807 110 125 110H75C61.1929 110 50 98.8071 50 85C50 71.1929 61.1929 60 75 60H130L150 50V85Z" fill="var(--accent)" />
+            {/* Lines inside bubble 1 representing text */}
+            <line x1="75" y1="80" x2="125" y2="80" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
+            <line x1="75" y1="90" x2="110" y2="90" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
+          </g>
         </svg>
       </div>
 
