@@ -1,0 +1,22 @@
+# Backend
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/signal_clone.db
+backend/.env
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env*.local
+
+# General
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+*.swp
