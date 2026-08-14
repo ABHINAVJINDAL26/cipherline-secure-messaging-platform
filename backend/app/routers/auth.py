@@ -16,6 +16,25 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 _pending_registrations: dict = {}
 
 
+@router.get("/check-username")
+def check_username(username: str, db: Session = Depends(get_db)):
+    """Real-time check if a username is available."""
+    import re
+    clean_username = username.lower().strip()
+    if not clean_username:
+        return {"available": False, "reason": "Username cannot be empty"}
+
+    if not re.match(r"^[a-z0-9._]{3,20}$", clean_username):
+        return {"available": False, "reason": "Must be 3-20 chars, letters, numbers, dot, or underscore"}
+
+    exists = db.query(User).filter(User.username == clean_username).first()
+    return {
+        "available": exists is None,
+        "username": clean_username,
+        "reason": "Username already taken" if exists else "Username available"
+    }
+
+
 @router.post("/register", status_code=status.HTTP_200_OK)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     """Register step 1: Validate phone and password, generate random OTP."""

@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { wsClient } from '@/lib/websocket';
 import { TokenResponse } from '@/types';
 import { getErrorMessage } from '@/lib/utils';
-import { User, Phone, Lock as LockIcon, Shield, CheckCircle } from 'lucide-react';
+import { User, Phone, Lock as LockIcon, Shield, CheckCircle, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 type Step = 'details' | 'otp';
 
@@ -23,6 +23,53 @@ export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Real-time Username Availability Check
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [usernameMessage, setUsernameMessage] = useState('');
+
+  // Debounced check username
+  useEffect(() => {
+    const clean = username.trim().toLowerCase();
+    if (!clean) {
+      setUsernameStatus('idle');
+      setUsernameMessage('');
+      return;
+    }
+
+    if (clean.length < 3) {
+      setUsernameStatus('invalid');
+      setUsernameMessage('Min 3 characters');
+      return;
+    }
+
+    if (!/^[a-z0-9._]{3,20}$/.test(clean)) {
+      setUsernameStatus('invalid');
+      setUsernameMessage('Letters, numbers, dot, or _ only');
+      return;
+    }
+
+    setUsernameStatus('checking');
+    setUsernameMessage('Checking availability...');
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await authApi.checkUsername(clean);
+        if (res.data.available) {
+          setUsernameStatus('available');
+          setUsernameMessage('Username available');
+        } else {
+          setUsernameStatus('taken');
+          setUsernameMessage(res.data.reason || 'Username taken');
+        }
+      } catch {
+        setUsernameStatus('idle');
+        setUsernameMessage('');
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [username]);
 
   // OTP Verification
   const [otp, setOtp] = useState('');
@@ -56,6 +103,11 @@ export default function RegisterPage() {
     if (!username.trim()) { setError('Username is required'); return; }
     if (!/^[a-z0-9._]{3,20}$/.test(username.trim().toLowerCase())) {
       setError('Username must be 3-20 chars, lowercase letters, numbers, dots, underscores only');
+      triggerShake();
+      return;
+    }
+    if (usernameStatus === 'taken') {
+      setError('Username already taken, please choose another');
       triggerShake();
       return;
     }
@@ -245,11 +297,42 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Username</label>
-                  <div className="signal-input-container">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Username</label>
+                    {usernameStatus !== 'idle' && (
+                      <span className={`text-[11px] font-medium flex items-center gap-1 transition-all ${
+                        usernameStatus === 'available' ? 'text-emerald-500' :
+                        usernameStatus === 'taken' ? 'text-red-500' :
+                        usernameStatus === 'invalid' ? 'text-amber-500' :
+                        'text-slate-400'
+                      }`}>
+                        {usernameStatus === 'checking' && <Loader2 size={11} className="animate-spin" />}
+                        {usernameStatus === 'available' && <CheckCircle2 size={11} />}
+                        {usernameStatus === 'taken' && <XCircle size={11} />}
+                        {usernameStatus === 'invalid' && <AlertCircle size={11} />}
+                        {usernameMessage}
+                      </span>
+                    )}
+                  </div>
+                  <div className="signal-input-container relative">
                     <span className="signal-input-icon text-sm font-bold" style={{ left: '14px' }}>@</span>
-                    <input className="signal-input signal-input-with-icon w-full" type="text" placeholder="e.g. john_doe"
-                      value={username} onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))} required />
+                    <input
+                      className={`signal-input signal-input-with-icon w-full pr-9 transition-colors ${
+                        usernameStatus === 'available' ? 'border-emerald-500/50 focus:border-emerald-500' :
+                        usernameStatus === 'taken' ? 'border-red-500/50 focus:border-red-500' :
+                        ''
+                      }`}
+                      type="text"
+                      placeholder="e.g. john_doe"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
+                      required
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                      {usernameStatus === 'checking' && <Loader2 size={16} className="animate-spin text-slate-400" />}
+                      {usernameStatus === 'available' && <CheckCircle2 size={16} className="text-emerald-500" />}
+                      {usernameStatus === 'taken' && <XCircle size={16} className="text-red-500" />}
+                    </div>
                   </div>
                   <p className="text-[10px] ml-1" style={{ color: 'var(--text-muted)' }}>Others will find you by this. 3–20 chars, letters/numbers/_.</p>
                 </div>

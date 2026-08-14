@@ -35,6 +35,11 @@ export default api;
 // Auth API
 // ---------------------------------------------------------------------------
 export const authApi = {
+  checkUsername: (username: string) =>
+    api.get<{ available: boolean; username: string; reason?: string }>(
+      `/auth/check-username?username=${encodeURIComponent(username)}`
+    ),
+
   register: (data: {
     phone_number: string;
     password: string;
