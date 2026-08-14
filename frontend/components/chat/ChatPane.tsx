@@ -28,15 +28,44 @@ export default function ChatPane({ conversationId, currentUser }: ChatPaneProps)
   const convMessages = messages[conversationId] || [];
   const typingInConv = (typingUsers[conversationId] || []).filter((uid) => uid !== currentUser.id);
 
-  // Load message history
+  // Load message history & keep in sync with background polling fallback
   useEffect(() => {
+    let isMounted = true;
     setLoading(true);
-    conversationsApi.getMessages(conversationId, 50)
-      .then((res) => {
-        setMessages(conversationId, res.data);
-        markConversationRead(conversationId);
-      })
-      .finally(() => setLoading(false));
+
+    const fetchMessages = async (silent = false) => {
+      try {
+        const res = await conversationsApi.getMessages(conversationId, 50);
+        if (isMounted) {
+          setMessages(conversationId, res.data);
+          markConversationRead(conversationId);
+        }
+      } catch (e) {
+        // silent
+      } finally {
+        if (isMounted && !silent) setLoading(false);
+      }
+    };
+
+    // Initial load
+    fetchMessages(false);
+
+    // 2.5s Background Sync Interval (handles WebSocket drops, sleeping server, or background tab)
+    const interval = setInterval(() => {
+      fetchMessages(true);
+    }, 2500);
+
+    // Re-fetch instantly on window focus or tab visibility
+    const handleFocus = () => fetchMessages(true);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, [conversationId]);
 
   // Scroll to bottom on new messages

@@ -1,6 +1,18 @@
 import { WSEvent } from '@/types';
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
+function getWsUrl(): string {
+  if (process.env.NEXT_PUBLIC_WS_URL) {
+    return process.env.NEXT_PUBLIC_WS_URL;
+  }
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/^http/, 'ws');
+  }
+  if (typeof window !== 'undefined') {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${window.location.hostname}:8000`;
+  }
+  return 'ws://localhost:8000';
+}
 
 type EventHandler = (event: WSEvent) => void;
 
@@ -12,7 +24,7 @@ class SignalWebSocketClient {
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private pingInterval: NodeJS.Timeout | null = null;
   private reconnectDelay = 1000;
-  private maxReconnectDelay = 30000;
+  private maxReconnectDelay = 15000;
   private isManuallyDisconnected = false;
 
   connect(userId: string, token: string) {
@@ -26,7 +38,8 @@ class SignalWebSocketClient {
     if (!this.userId || !this.token) return;
 
     try {
-      const url = `${WS_URL}/ws/${this.userId}?token=${this.token}`;
+      const baseUrl = getWsUrl().replace(/\/+$/, '');
+      const url = `${baseUrl}/ws/${this.userId}?token=${this.token}`;
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {

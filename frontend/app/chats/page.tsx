@@ -41,15 +41,34 @@ export default function ChatsPage() {
     return () => clearTimeout(timer);
   }, [router]);
 
-  // Load conversations on mount
+  // Load conversations on mount & keep in sync periodically
   useEffect(() => {
     if (!isAuthenticated) return;
-    conversationsApi.list().then((res) => {
-      setConversations(res.data);
-    }).catch(() => {
-      addToast({ message: 'Failed to load conversations', type: 'error' });
-    });
-  }, [isAuthenticated]);
+
+    let isMounted = true;
+    const fetchConversations = () => {
+      conversationsApi.list().then((res) => {
+        if (isMounted) setConversations(res.data);
+      }).catch(() => {});
+    };
+
+    fetchConversations();
+
+    // 4s Background Sync
+    const interval = setInterval(fetchConversations, 4000);
+
+    // Focus & Visibility refresh
+    const handleFocus = () => fetchConversations();
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, [isAuthenticated, setConversations]);
 
   // Connect WebSocket
   useEffect(() => {

@@ -369,10 +369,21 @@ async def send_message(
     # Update last_message_id on conversation
     conv.last_message_id = msg.id
     db.commit()
-    db.refresh(msg)
+
+    full_msg = (
+        db.query(Message)
+        .filter(Message.id == msg.id)
+        .options(
+            joinedload(Message.sender),
+            joinedload(Message.statuses),
+            joinedload(Message.reactions).joinedload(MessageReaction.user),
+            joinedload(Message.reply_to).joinedload(Message.sender),
+        )
+        .first()
+    )
 
     # Broadcast to all members in the conversation via WebSocket
-    msg_data = MessageResponse.model_validate(msg).model_dump(mode="json")
+    msg_data = MessageResponse.model_validate(full_msg).model_dump(mode="json")
     if payload.client_temp_id:
         msg_data["client_temp_id"] = payload.client_temp_id
 
@@ -383,7 +394,7 @@ async def send_message(
     )
 
     # Return the message with the client_temp_id included for the sender
-    response_model = MessageResponse.model_validate(msg)
+    response_model = MessageResponse.model_validate(full_msg)
     response_model.client_temp_id = payload.client_temp_id
     return response_model
 
