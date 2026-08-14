@@ -115,6 +115,7 @@ export default function RegisterPage() {
       // Re-call register to trigger resend (backend returns fixed demo OTP)
       const res = await authApi.register({
         phone_number: phoneNumber.trim(),
+        username: username.trim(),
         password,
         display_name: displayName.trim(),
       });

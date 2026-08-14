@@ -7,6 +7,7 @@ import { conversationsApi } from '@/lib/api';
 import { Conversation, User } from '@/types';
 import ConversationItem from './ConversationItem';
 import { Search, Plus, Users } from 'lucide-react';
+import { getInitials } from '@/lib/utils';
 
 interface ConversationListProps {
   currentUser: User;

@@ -18,6 +18,7 @@ interface ComposerProps {
 export default function Composer({ conversationId, currentUser, replyToMessageId, replyToMessage, onCancelReply }: ComposerProps) {
   const [text, setText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const EMOJI_LIST = [
     '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂',
@@ -91,6 +92,7 @@ export default function Composer({ conversationId, currentUser, replyToMessageId
     textareaRef.current?.focus();
 
     // 2. Send in background
+    setSending(true);
     try {
       const res = await conversationsApi.sendMessage(conversationId, {
         content,
@@ -102,7 +104,8 @@ export default function Composer({ conversationId, currentUser, replyToMessageId
       updateLastMessage(conversationId, res.data);
     } catch (err) {
       console.error('Failed to send message', err);
-      // Optional: Add a failed status or show a toast
+    } finally {
+      setSending(false);
     }
   };
 
