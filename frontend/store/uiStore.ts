@@ -16,6 +16,7 @@ interface UIState {
   isNewGroupOpen: boolean;
   isProfileOpen: boolean;
   isSettingsOpen: boolean;
+  isGroupInfoOpen: boolean;
   toasts: Toast[];
   commandPaletteOpen: boolean;
 
@@ -25,6 +26,7 @@ interface UIState {
   setNewGroupOpen: (open: boolean) => void;
   setProfileOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
+  setGroupInfoOpen: (open: boolean) => void;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   setCommandPaletteOpen: (open: boolean) => void;
@@ -37,6 +39,7 @@ export const useUIStore = create<UIState>((set) => ({
   isNewGroupOpen: false,
   isProfileOpen: false,
   isSettingsOpen: false,
+  isGroupInfoOpen: false,
   toasts: [],
   commandPaletteOpen: false,
 
@@ -58,6 +61,7 @@ export const useUIStore = create<UIState>((set) => ({
   setNewGroupOpen: (open) => set({ isNewGroupOpen: open }),
   setProfileOpen: (open) => set({ isProfileOpen: open }),
   setSettingsOpen: (open) => set({ isSettingsOpen: open }),
+  setGroupInfoOpen: (open) => set({ isGroupInfoOpen: open }),
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
 
   addToast: (toast) => {

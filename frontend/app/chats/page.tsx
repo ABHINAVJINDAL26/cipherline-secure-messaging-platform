@@ -18,16 +18,17 @@ import ToastContainer from '@/components/shared/ToastContainer';
 import NewChatModal from '@/components/modals/NewChatModal';
 import NewGroupModal from '@/components/modals/NewGroupModal';
 import SettingsPanel from '@/components/modals/SettingsPanel';
+import GroupInfoModal from '@/components/modals/GroupInfoModal';
 import CommandPalette from '@/components/shared/CommandPalette';
 
 export default function ChatsPage() {
   const router = useRouter();
   const { user, token, isAuthenticated, logout } = useAuthStore();
   const {
-    setConversations, addMessage, updateMessageStatus, setTyping,
+    conversations, setConversations, addMessage, updateMessageStatus, setTyping,
     setOnlineStatus, updateLastMessage, activeConversationId, addConversation
   } = useChatStore();
-  const { isNewChatOpen, isNewGroupOpen, isSettingsOpen, commandPaletteOpen, addToast } = useUIStore();
+  const { isNewChatOpen, isNewGroupOpen, isSettingsOpen, isGroupInfoOpen, commandPaletteOpen, addToast } = useUIStore();
 
   // Guard: redirect if not authenticated.
   // Small delay lets Zustand persist middleware rehydrate from localStorage before we check.
@@ -147,6 +148,14 @@ export default function ChatsPage() {
       {isNewChatOpen && <NewChatModal />}
       {isNewGroupOpen && <NewGroupModal />}
       {isSettingsOpen && <SettingsPanel user={user} />}
+      {isGroupInfoOpen && activeConversationId && (
+        (() => {
+          const activeConv = conversations.find((c) => c.id === activeConversationId);
+          return activeConv && activeConv.type === 'group' ? (
+            <GroupInfoModal conversation={activeConv} currentUser={user} />
+          ) : null;
+        })()
+      )}
       {commandPaletteOpen && <CommandPalette />}
 
       {/* Global toasts */}

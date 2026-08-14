@@ -13,7 +13,8 @@ interface ChatHeaderProps {
 
 export default function ChatHeader({ conversation, currentUser }: ChatHeaderProps) {
   const { typingUsers, onlineUsers } = useChatStore();
-  const { addToast, setActiveConversation } = { ...useUIStore(), setActiveConversation: useChatStore(s => s.setActiveConversation) };
+  const { addToast, setGroupInfoOpen } = useUIStore();
+  const setActiveConversation = useChatStore((s) => s.setActiveConversation);
 
   const name = getConversationName(conversation, currentUser.id);
   const avatarSrc = getConversationAvatar(conversation, currentUser.id);
@@ -33,7 +34,7 @@ export default function ChatHeader({ conversation, currentUser }: ChatHeaderProp
   const getSubtitle = () => {
     if (isTyping) return 'typing...';
     if (conversation.type === 'group') {
-      return `${conversation.members.length} members`;
+      return `${conversation.members.length} members · Tap for info`;
     }
     if (isOtherOnline) return 'Online';
     if (otherMember?.user.last_seen) return `Last seen ${formatLastSeen(otherMember.user.last_seen)}`;
@@ -42,6 +43,18 @@ export default function ChatHeader({ conversation, currentUser }: ChatHeaderProp
 
   const comingSoon = (feature: string) => {
     addToast({ message: `${feature} — Coming Soon!`, type: 'info' });
+  };
+
+  const handleOpenInfo = () => {
+    if (conversation.type === 'group') {
+      setGroupInfoOpen(true);
+    } else if (otherMember) {
+      addToast({
+        message: `${name} (@${otherMember.user.username || otherMember.user.phone_number})`,
+        type: 'info',
+        duration: 3000,
+      });
+    }
   };
 
   return (
@@ -58,10 +71,14 @@ export default function ChatHeader({ conversation, currentUser }: ChatHeaderProp
         <ArrowLeft size={20} />
       </button>
 
-      {/* Avatar */}
-      <div className="relative flex-shrink-0">
+      {/* Avatar (clickable for group info) */}
+      <div
+        className="relative flex-shrink-0 cursor-pointer transition-transform hover:scale-105"
+        onClick={handleOpenInfo}
+        title={conversation.type === 'group' ? 'View Group Info & Members' : 'View Contact Info'}
+      >
         {avatarSrc ? (
-          <img src={avatarSrc} alt={name} className="w-10 h-10 rounded-full object-cover" />
+          <img src={avatarSrc} alt={name} className="w-10 h-10 rounded-full object-cover border border-[var(--border)]" />
         ) : (
           <div className="avatar-fallback w-10 h-10 text-sm">{getInitials(name)}</div>
         )}
@@ -76,9 +93,15 @@ export default function ChatHeader({ conversation, currentUser }: ChatHeaderProp
         )}
       </div>
 
-      {/* Name + subtitle */}
-      <div className="flex-1 min-w-0">
-        <h2 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{name}</h2>
+      {/* Name + subtitle (clickable for group info) */}
+      <div
+        className="flex-1 min-w-0 cursor-pointer"
+        onClick={handleOpenInfo}
+        title={conversation.type === 'group' ? 'View Group Info & Members' : 'View Contact Info'}
+      >
+        <h2 className="text-sm font-semibold truncate hover:text-[var(--accent)] transition-colors" style={{ color: 'var(--text-primary)' }}>
+          {name}
+        </h2>
         <p className="text-xs truncate"
           style={{ color: isTyping ? 'var(--accent)' : 'var(--text-muted)' }}>
           {getSubtitle()}
@@ -93,7 +116,12 @@ export default function ChatHeader({ conversation, currentUser }: ChatHeaderProp
         <button className="icon-btn" onClick={() => comingSoon('Video call')} aria-label="Video Call">
           <Video size={18} />
         </button>
-        <button className="icon-btn" aria-label="More options">
+        <button
+          className="icon-btn"
+          onClick={handleOpenInfo}
+          aria-label="Group Details & Options"
+          title="Group Details & Members"
+        >
           <MoreVertical size={18} />
         </button>
       </div>

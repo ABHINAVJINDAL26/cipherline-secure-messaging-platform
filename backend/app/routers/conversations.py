@@ -169,8 +169,18 @@ def create_conversation(
             ))
 
     db.commit()
-    db.refresh(conv)
-    return conv
+    
+    # Reload with full relations
+    full_conv = (
+        db.query(Conversation)
+        .filter(Conversation.id == conv.id)
+        .options(
+            joinedload(Conversation.members).joinedload(ConversationMember.user),
+            joinedload(Conversation.last_message).joinedload(Message.sender),
+        )
+        .first()
+    )
+    return full_conv
 
 
 @router.get("/{conv_id}", response_model=ConversationResponse)
@@ -186,7 +196,15 @@ def get_conversation(
     if not member:
         raise HTTPException(403, "Not a member of this conversation")
 
-    conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
+    conv = (
+        db.query(Conversation)
+        .filter(Conversation.id == conv_id)
+        .options(
+            joinedload(Conversation.members).joinedload(ConversationMember.user),
+            joinedload(Conversation.last_message).joinedload(Message.sender),
+        )
+        .first()
+    )
     if not conv:
         raise HTTPException(404, "Conversation not found")
     return conv
@@ -202,22 +220,30 @@ def update_conversation(
     member = db.query(ConversationMember).filter(
         ConversationMember.conversation_id == conv_id,
         ConversationMember.user_id == current_user.id,
-        ConversationMember.role == MemberRole.admin,
     ).first()
     if not member:
-        raise HTTPException(403, "Admin access required")
+        raise HTTPException(403, "Not a member of this group")
 
     conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
     if not conv:
         raise HTTPException(404, "Not found")
 
     if payload.group_name:
-        conv.group_name = payload.group_name
-    if payload.group_avatar_url:
+        conv.group_name = payload.group_name.strip()
+    if payload.group_avatar_url is not None:
         conv.group_avatar_url = payload.group_avatar_url
     db.commit()
-    db.refresh(conv)
-    return conv
+
+    full_conv = (
+        db.query(Conversation)
+        .filter(Conversation.id == conv_id)
+        .options(
+            joinedload(Conversation.members).joinedload(ConversationMember.user),
+            joinedload(Conversation.last_message).joinedload(Message.sender),
+        )
+        .first()
+    )
+    return full_conv
 
 
 # ---------------------------------------------------------------------------

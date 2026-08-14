@@ -5,8 +5,17 @@ import { useUIStore } from '@/store/uiStore';
 import { useChatStore } from '@/store/chatStore';
 import { usersApi, conversationsApi } from '@/lib/api';
 import { User } from '@/types';
-import { X, Search, Check, Users, ArrowLeft, Plus } from 'lucide-react';
+import { X, Search, Check, Users, ArrowLeft, Camera } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
+
+const GROUP_AVATAR_PRESETS = [
+  'https://api.dicebear.com/7.x/identicon/svg?seed=Friends',
+  'https://api.dicebear.com/7.x/identicon/svg?seed=Team',
+  'https://api.dicebear.com/7.x/identicon/svg?seed=Project',
+  'https://api.dicebear.com/7.x/identicon/svg?seed=Rocket',
+  'https://api.dicebear.com/7.x/identicon/svg?seed=Club',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=Cyber',
+];
 
 export default function NewGroupModal() {
   const { setNewGroupOpen, addToast } = useUIStore();
@@ -16,6 +25,7 @@ export default function NewGroupModal() {
   const [results, setResults] = useState<User[]>([]);
   const [selected, setSelected] = useState<User[]>([]);
   const [groupName, setGroupName] = useState('');
+  const [groupAvatar, setGroupAvatar] = useState(GROUP_AVATAR_PRESETS[0]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
@@ -60,6 +70,7 @@ export default function NewGroupModal() {
       const res = await conversationsApi.create({
         type: 'group',
         group_name: groupName.trim(),
+        group_avatar_url: groupAvatar || undefined,
         member_ids: selected.map((u) => u.id),
       });
       addConversation(res.data);
@@ -232,14 +243,37 @@ export default function NewGroupModal() {
           </>
         ) : (
           <>
-            {/* Step 2: Group Name & Creation */}
-            <div className="flex flex-col items-center justify-center my-4">
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center shadow-inner mb-3"
-                style={{ background: 'var(--bg-input)', border: '2px dashed var(--accent)' }}
-              >
-                <Users size={36} style={{ color: 'var(--accent)' }} />
+            {/* Step 2: Group Photo Picker & Details */}
+            <div className="flex flex-col items-center justify-center my-3">
+              <div className="relative mb-2">
+                <img
+                  src={groupAvatar}
+                  alt="Group Avatar"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-[var(--accent)] shadow-md"
+                />
+                <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center bg-[var(--accent)] text-white">
+                  <Camera size={12} />
+                </div>
               </div>
+
+              {/* Group DP Presets */}
+              <p className="text-[11px] mb-1.5 font-medium" style={{ color: 'var(--text-muted)' }}>
+                Choose Group Photo:
+              </p>
+              <div className="flex items-center gap-2 mb-3">
+                {GROUP_AVATAR_PRESETS.map((url, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setGroupAvatar(url)}
+                    className="w-8 h-8 rounded-full overflow-hidden border-2 transition-transform hover:scale-110 p-0.5"
+                    style={{ borderColor: groupAvatar === url ? 'var(--accent)' : 'var(--border)' }}
+                  >
+                    <img src={url} alt={`Preset ${idx}`} className="w-full h-full rounded-full object-cover" />
+                  </button>
+                ))}
+              </div>
+
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 Group with {selected.length} members
               </p>
