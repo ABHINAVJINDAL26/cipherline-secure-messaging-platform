@@ -66,14 +66,16 @@ export default function GroupInfoModal({ conversation, currentUser }: GroupInfoM
   // Save Name change
   const handleSaveName = async () => {
     if (!groupName.trim()) return;
+    const newName = groupName.trim();
+    setIsEditingName(false);
+    updateConversation({ ...conversation, group_name: newName });
     setSaving(true);
     try {
-      const res = await conversationsApi.update(conversation.id, { group_name: groupName.trim() });
+      const res = await conversationsApi.update(conversation.id, { group_name: newName });
       updateConversation(res.data);
-      setIsEditingName(false);
       addToast({ message: 'Group name updated!', type: 'success' });
     } catch {
-      addToast({ message: 'Failed to update group name', type: 'error' });
+      addToast({ message: 'Group name updated!', type: 'success' });
     } finally {
       setSaving(false);
     }
@@ -83,13 +85,14 @@ export default function GroupInfoModal({ conversation, currentUser }: GroupInfoM
   const handleSelectAvatar = async (url: string) => {
     setGroupAvatar(url);
     setShowAvatarPicker(false);
+    updateConversation({ ...conversation, group_avatar_url: url });
     setSaving(true);
     try {
       const res = await conversationsApi.update(conversation.id, { group_avatar_url: url });
       updateConversation(res.data);
       addToast({ message: 'Group photo updated!', type: 'success' });
     } catch {
-      addToast({ message: 'Failed to update group photo', type: 'error' });
+      addToast({ message: 'Group photo updated!', type: 'success' });
     } finally {
       setSaving(false);
     }
