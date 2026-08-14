@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useChatStore } from '@/store/chatStore';
 import { usersApi, conversationsApi } from '@/lib/api';
 import { User } from '@/types';
-import { X, Search, Check, Users } from 'lucide-react';
+import { X, Search, Check, Users, ArrowLeft, Plus } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 
 export default function NewGroupModal() {
@@ -16,16 +16,30 @@ export default function NewGroupModal() {
   const [results, setResults] = useState<User[]>([]);
   const [selected, setSelected] = useState<User[]>([]);
   const [groupName, setGroupName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+
+  // Load all users initially on mount so member list is immediately visible
+  useEffect(() => {
+    setLoading(true);
+    usersApi.searchUsers('')
+      .then((res) => {
+        setResults(res.data);
+      })
+      .catch(() => {
+        addToast({ message: 'Failed to load contacts', type: 'error' });
+      })
+      .finally(() => setLoading(false));
+  }, [addToast]);
 
   const handleSearch = async (q: string) => {
     setQuery(q);
-    if (!q.trim()) { setResults([]); return; }
     setLoading(true);
     try {
-      const res = await usersApi.searchUsers(q);
+      const res = await usersApi.searchUsers(q.trim());
       setResults(res.data);
+    } catch {
+      // silent
     } finally {
       setLoading(false);
     }
@@ -45,7 +59,7 @@ export default function NewGroupModal() {
     try {
       const res = await conversationsApi.create({
         type: 'group',
-        group_name: groupName,
+        group_name: groupName.trim(),
         member_ids: selected.map((u) => u.id),
       });
       addConversation(res.data);
@@ -61,11 +75,30 @@ export default function NewGroupModal() {
 
   return (
     <div className="modal-overlay" onClick={() => setNewGroupOpen(false)}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {step === 'members' ? 'New Group' : 'Name your group'}
-          </h2>
+          <div className="flex items-center gap-2">
+            {step === 'name' && (
+              <button
+                className="icon-btn -ml-1"
+                onClick={() => setStep('members')}
+                aria-label="Back to member selection"
+              >
+                <ArrowLeft size={18} />
+              </button>
+            )}
+            <div>
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {step === 'members' ? 'New Group' : 'Name This Group'}
+              </h2>
+              {step === 'members' && (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {selected.length > 0 ? `${selected.length} members selected` : 'Select contacts to add'}
+                </p>
+              )}
+            </div>
+          </div>
           <button className="icon-btn" onClick={() => setNewGroupOpen(false)} aria-label="Close">
             <X size={18} />
           </button>
@@ -73,14 +106,21 @@ export default function NewGroupModal() {
 
         {step === 'members' ? (
           <>
-            {/* Selected users chips */}
+            {/* Selected users horizontal pill list */}
             {selected.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3 p-2 rounded-xl" style={{ background: 'var(--bg-input)' }}>
+              <div className="flex items-center gap-2 mb-3 p-2 rounded-xl overflow-x-auto" style={{ background: 'var(--bg-input)' }}>
                 {selected.map((u) => (
-                  <div key={u.id} className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
-                    style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
+                  <div
+                    key={u.id}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 animate-scale-in"
+                    style={{ background: 'var(--accent)', color: '#fff' }}
+                  >
                     <span>{u.display_name.split(' ')[0]}</span>
-                    <button onClick={() => toggleSelect(u)} aria-label={`Remove ${u.display_name}`}>
+                    <button
+                      onClick={() => toggleSelect(u)}
+                      className="hover:opacity-80 transition-opacity"
+                      aria-label={`Remove ${u.display_name}`}
+                    >
                       <X size={12} />
                     </button>
                   </div>
@@ -88,82 +128,173 @@ export default function NewGroupModal() {
               </div>
             )}
 
-            {/* Search */}
-            <div className="search-bar mb-4" style={{ margin: '0 0 12px 0' }}>
+            {/* Search Input */}
+            <div className="search-bar mb-3" style={{ margin: '0 0 12px 0' }}>
               <Search size={16} />
-              <input placeholder="Search users to add..." value={query}
-                onChange={(e) => handleSearch(e.target.value)} autoFocus />
+              <input
+                placeholder="Search name or @username..."
+                value={query}
+                onChange={(e) => handleSearch(e.target.value)}
+                autoFocus
+                aria-label="Search users to add"
+              />
             </div>
 
-            {/* Results */}
-            <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
-              {results.map((user) => {
-                const isSelected = selected.some((u) => u.id === user.id);
-                return (
-                  <button key={user.id}
-                    className="flex items-center gap-3 p-2.5 rounded-xl transition-colors text-left"
-                    style={{ background: isSelected ? 'var(--accent-light)' : 'transparent' }}
-                    onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                    onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
-                    onClick={() => toggleSelect(user)}>
-                    {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.display_name} className="w-9 h-9 rounded-full object-cover" />
-                    ) : (
-                      <div className="avatar-fallback w-9 h-9 text-xs">{getInitials(user.display_name)}</div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{user.display_name}</p>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>@{user.username}</p>
+            {/* Contacts list */}
+            <div className="flex flex-col gap-1 max-h-60 overflow-y-auto pr-1">
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl">
+                    <div className="skeleton w-10 h-10 rounded-full flex-shrink-0" />
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <div className="skeleton h-3 w-32 rounded" />
+                      <div className="skeleton h-2 w-20 rounded" />
                     </div>
-                    {isSelected && <Check size={16} style={{ color: 'var(--accent)' }} />}
-                  </button>
-                );
-              })}
+                  </div>
+                ))
+              ) : results.length > 0 ? (
+                results.map((user) => {
+                  const isSelected = selected.some((u) => u.id === user.id);
+                  return (
+                    <button
+                      key={user.id}
+                      type="button"
+                      className="flex items-center gap-3 p-2.5 rounded-xl transition-all text-left w-full cursor-pointer"
+                      style={{
+                        background: isSelected ? 'var(--bg-hover)' : 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) e.currentTarget.style.background = 'var(--bg-hover)';
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) e.currentTarget.style.background = 'transparent';
+                      }}
+                      onClick={() => toggleSelect(user)}
+                    >
+                      {/* Avatar */}
+                      {user.avatar_url ? (
+                        <img
+                          src={user.avatar_url}
+                          alt={user.display_name}
+                          className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-[var(--border)]"
+                        />
+                      ) : (
+                        <div className="avatar-fallback w-10 h-10 text-xs flex-shrink-0">
+                          {getInitials(user.display_name)}
+                        </div>
+                      )}
+
+                      {/* Name + Username */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                          {user.display_name}
+                        </p>
+                        <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                          @{user.username || user.phone_number}
+                        </p>
+                      </div>
+
+                      {/* Selection Checkbox Pill */}
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center transition-colors border"
+                        style={{
+                          background: isSelected ? 'var(--accent)' : 'transparent',
+                          borderColor: isSelected ? 'var(--accent)' : 'var(--border)',
+                          color: '#fff',
+                        }}
+                      >
+                        {isSelected && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-sm">No contacts found</p>
+                </div>
+              )}
             </div>
 
             {/* Next button */}
             <button
-              className="btn-primary w-full mt-4"
+              type="button"
+              className="btn-primary w-full mt-4 flex items-center justify-center gap-2"
               disabled={selected.length === 0}
               onClick={() => setStep('name')}
             >
-              Next ({selected.length} selected)
+              <span>Next</span>
+              {selected.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-xs bg-white/20">
+                  {selected.length}
+                </span>
+              )}
             </button>
           </>
         ) : (
           <>
-            {/* Group name step */}
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'var(--accent-light)' }}>
-                <Users size={32} style={{ color: 'var(--accent)' }} />
+            {/* Step 2: Group Name & Creation */}
+            <div className="flex flex-col items-center justify-center my-4">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center shadow-inner mb-3"
+                style={{ background: 'var(--bg-input)', border: '2px dashed var(--accent)' }}
+              >
+                <Users size={36} style={{ color: 'var(--accent)' }} />
               </div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                Group with {selected.length} members
+              </p>
             </div>
 
-            <div className="flex items-center gap-3 mb-4">
-              {selected.slice(0, 3).map((u) => (
+            {/* Selected Avatars Preview */}
+            <div className="flex items-center justify-center gap-1 mb-4 flex-wrap max-w-xs mx-auto">
+              {selected.slice(0, 6).map((u) => (
                 u.avatar_url ? (
-                  <img key={u.id} src={u.avatar_url} alt={u.display_name} className="w-8 h-8 rounded-full object-cover" />
+                  <img
+                    key={u.id}
+                    src={u.avatar_url}
+                    alt={u.display_name}
+                    title={u.display_name}
+                    className="w-7 h-7 rounded-full object-cover border border-[var(--border)]"
+                  />
                 ) : (
-                  <div key={u.id} className="avatar-fallback w-8 h-8 text-xs">{getInitials(u.display_name)}</div>
+                  <div key={u.id} className="avatar-fallback w-7 h-7 text-[10px]" title={u.display_name}>
+                    {getInitials(u.display_name)}
+                  </div>
                 )
               ))}
-              {selected.length > 3 && (
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>+{selected.length - 3} more</span>
+              {selected.length > 6 && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>
+                  +{selected.length - 6}
+                </span>
               )}
             </div>
 
+            {/* Group Name Input */}
             <input
               className="signal-input mb-4"
-              placeholder="Group name..."
+              placeholder="Enter group name (e.g. Project Alpha)..."
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               autoFocus
+              aria-label="Group name"
             />
 
+            {/* Action Buttons */}
             <div className="flex gap-3">
-              <button className="btn-ghost flex-1" onClick={() => setStep('members')}>Back</button>
-              <button className="btn-primary flex-1" disabled={!groupName.trim() || creating} onClick={handleCreate}>
+              <button
+                type="button"
+                className="btn-ghost flex-1"
+                onClick={() => setStep('members')}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="btn-primary flex-1"
+                disabled={!groupName.trim() || creating}
+                onClick={handleCreate}
+              >
                 {creating ? 'Creating...' : 'Create Group'}
               </button>
             </div>
